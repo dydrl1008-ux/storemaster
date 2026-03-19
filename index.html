@@ -715,6 +715,8 @@ ${collectedTitles.slice(0, 40).join('\n')}
         if (searchKwLower && sl.includes(searchKwLower)) return false;
         // 검색키워드 개별 토큰 포함 합성어 제거
         if (searchTokens.some(sk => sk.length >= 2 && sl.includes(sk))) return false;
+        // AI가 분해한 메인키워드 구성 단어 포함 제거 (ex: 충전기, 무선 등)
+        if ([...decomposedTokens].some(dk => dk.length >= 2 && sl.includes(dk))) return false;
         // 기존 상품명 토큰 포함 합성어 제거
         if (allExisting.some(ex => ex.length >= 2 && sl.includes(ex))) return false;
         return true;
