@@ -504,6 +504,9 @@ async function searchNaver() {
   document.getElementById('card2').style.opacity = '0.4';
   document.getElementById('card2').style.pointerEvents = 'none';
 
+  // 메인키워드 입력창 초기화
+  document.getElementById('mainKeyword').value = '';
+
   try {
     const res = await fetch('/api/search', {
       method: 'POST',
@@ -560,12 +563,21 @@ async function generateKeywords() {
   const newMainTokens = mainTokens.filter(t => !productSet.has(t.toLowerCase()));
   const allExisting   = [...productTokens, ...newMainTokens].map(t => t.toLowerCase());
 
-  // 메인키워드를 구성하는 모든 단어 Set (합성어 분리 포함)
-  // ex: "무선청소기" → ["무선청소기"], "무선 청소기" → ["무선", "청소기"]
+  // 메인키워드를 구성하는 모든 단어 Set
+  // ex: "z플립5 케이스" → ["z플립5", "케이스"] 각각 제거
   const mainKwTokenSet = new Set(mainTokens.map(t => t.toLowerCase()));
+  // 메인키워드 전체를 붙인 형태도 추가 (ex: "z플립5케이스")
+  const mainKwFull = mainTokens.map(t => t.toLowerCase()).join('');
 
-  // 완성 상품명에서 제외할 토큰: 메인키워드와 동일한 상품명 토큰
-  const filteredProductTokens = productTokens.filter(t => !mainKwTokenSet.has(t.toLowerCase()));
+  // 완성 상품명에서 제외할 토큰: 메인키워드 개별 토큰과 일치하는 상품명 토큰
+  const filteredProductTokens = productTokens.filter(t => {
+    const tl = t.toLowerCase();
+    // 메인키워드 토큰과 완전히 같은 경우 제외
+    if (mainKwTokenSet.has(tl)) return false;
+    // 메인키워드 전체(붙여쓰기)와 같은 경우 제외
+    if (tl === mainKwFull) return false;
+    return true;
+  });
 
   // 메인키워드 토큰 낱글자 Set (합성어 필터링용)
   const mainTokenSet = new Set(
