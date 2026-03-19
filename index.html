@@ -491,6 +491,19 @@ async function searchNaver() {
   setBtnLoading('searchBtn', 'searchBtnLabel', true, '수집 중...');
   setStatus(`네이버 쇼핑에서 "${keyword}" 검색 중... (${pages}페이지)`);
 
+  // 결과 초기화
+  document.getElementById('resultCard').style.display = 'none';
+  document.getElementById('tagsCard').style.display   = 'none';
+  document.getElementById('acqCard').style.display    = 'none';
+
+  // step 초기화
+  ['step1','step2','step3'].forEach(id => {
+    document.getElementById(id).classList.remove('active','done');
+  });
+  document.getElementById('step1').classList.add('active');
+  document.getElementById('card2').style.opacity = '0.4';
+  document.getElementById('card2').style.pointerEvents = 'none';
+
   try {
     const res = await fetch('/api/search', {
       method: 'POST',
@@ -546,6 +559,13 @@ async function generateKeywords() {
   const productSet    = new Set(productTokens.map(t => t.toLowerCase()));
   const newMainTokens = mainTokens.filter(t => !productSet.has(t.toLowerCase()));
   const allExisting   = [...productTokens, ...newMainTokens].map(t => t.toLowerCase());
+
+  // 메인키워드를 구성하는 모든 단어 Set (합성어 분리 포함)
+  // ex: "무선청소기" → ["무선청소기"], "무선 청소기" → ["무선", "청소기"]
+  const mainKwTokenSet = new Set(mainTokens.map(t => t.toLowerCase()));
+
+  // 완성 상품명에서 제외할 토큰: 메인키워드와 동일한 상품명 토큰
+  const filteredProductTokens = productTokens.filter(t => !mainKwTokenSet.has(t.toLowerCase()));
 
   // 메인키워드 토큰 낱글자 Set (합성어 필터링용)
   const mainTokenSet = new Set(
@@ -642,7 +662,7 @@ ${topWords}
       })
       .slice(0, addCount);
 
-    const finalTokens = [...productTokens, ...aiWords];
+    const finalTokens = [...filteredProductTokens, ...aiWords];
     const finalText   = finalTokens.join(' ');
     const charLen     = finalText.length;
 
@@ -653,7 +673,16 @@ ${topWords}
 
     const tagRow = document.getElementById('tagRow');
     tagRow.innerHTML = '';
-    productTokens.forEach(t  => addTag(tagRow, t, 'tag-orig'));
+    filteredProductTokens.forEach(t => addTag(tagRow, t, 'tag-orig'));
+    // 제외된 상품명 토큰은 취소선으로 표시
+    productTokens.filter(t => mainKwTokenSet.has(t.toLowerCase()))
+      .forEach(t => {
+        const span = document.createElement('span');
+        span.className = 'tag tag-orig';
+        span.style.cssText = 'opacity:0.35;text-decoration:line-through;';
+        span.textContent = t;
+        tagRow.appendChild(span);
+      });
     newMainTokens.forEach(t  => addTag(tagRow, t, 'tag-main'));
     aiWords.forEach(t        => addTag(tagRow, t, 'tag-ai'));
 
