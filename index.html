@@ -563,19 +563,23 @@ async function generateKeywords() {
   const newMainTokens = mainTokens.filter(t => !productSet.has(t.toLowerCase()));
   const allExisting   = [...productTokens, ...newMainTokens].map(t => t.toLowerCase());
 
-  // 메인키워드를 구성하는 모든 단어 Set
-  // ex: "z플립5 케이스" → ["z플립5", "케이스"] 각각 제거
-  const mainKwTokenSet = new Set(mainTokens.map(t => t.toLowerCase()));
-  // 메인키워드 전체를 붙인 형태도 추가 (ex: "z플립5케이스")
+  // 메인키워드 전체를 소문자+공백제거한 형태
   const mainKwFull = mainTokens.map(t => t.toLowerCase()).join('');
+  // 메인키워드 개별 토큰 Set
+  const mainKwTokenSet = new Set(mainTokens.map(t => t.toLowerCase()));
 
-  // 완성 상품명에서 제외할 토큰: 메인키워드 개별 토큰과 일치하는 상품명 토큰
+  // 완성 상품명에서 제외: 메인키워드 구성 단어와 매칭되는 상품명 토큰
+  // 매칭 기준: 1) 정확히 같거나, 2) 메인키워드 전체(붙여쓰기)에 포함되거나, 3) 메인키워드 토큰이 상품명 토큰을 포함하거나
   const filteredProductTokens = productTokens.filter(t => {
     const tl = t.toLowerCase();
-    // 메인키워드 토큰과 완전히 같은 경우 제외
+    // 메인키워드 개별 토큰과 정확히 같은 경우
     if (mainKwTokenSet.has(tl)) return false;
-    // 메인키워드 전체(붙여쓰기)와 같은 경우 제외
+    // 메인키워드 전체(붙여쓰기)와 같은 경우 (ex: "z플립7케이스")
     if (tl === mainKwFull) return false;
+    // 상품명 토큰이 메인키워드 전체에 포함되는 경우 (ex: "플립7" ⊂ "z플립7케이스")
+    if (mainKwFull.includes(tl)) return false;
+    // 메인키워드 토큰 중 하나가 상품명 토큰을 포함하는 경우 (ex: "z플립7" ⊃ "플립7")
+    if ([...mainKwTokenSet].some(mk => mk.includes(tl) || tl.includes(mk))) return false;
     return true;
   });
 
@@ -666,9 +670,11 @@ ${topWords}
         if (!s || s.length === 0 || s.length > 12) return false;
         const sl = s.toLowerCase();
         if (allExisting.includes(sl)) return false;
-        // 합성어 필터: 메인키워드 포함 단어 제거
+        // 메인키워드 전체 포함 합성어 제거
         if (mainKwLower && sl.includes(mainKwLower)) return false;
-        // 기존 토큰 중 하나를 포함하는 합성어 제거
+        // 메인키워드 개별 토큰 포함 합성어 제거
+        if ([...mainKwTokenSet].some(mk => mk.length >= 2 && sl.includes(mk))) return false;
+        // 기존 상품명 토큰 포함 합성어 제거
         if (allExisting.some(ex => ex.length >= 2 && sl.includes(ex))) return false;
         return true;
       })
