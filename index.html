@@ -573,19 +573,28 @@ async function generateKeywords() {
   // 메인키워드 입력창 토큰도 함께
   const mainKwTokenSet = new Set([...searchTokens, ...mainTokens.map(t => t.toLowerCase())]);
 
-  // 상품명 토큰에서 검색키워드 구성 단어 부분만 제거하고 나머지 보존
-  // ex: "갤럭시Z플립5" + searchToken "z플립5" → "갤럭시" 남김
-  // ex: "케이스" + searchToken "케이스" → 완전 제거
+  // 상품명 토큰에서 검색키워드 구성 단어 제거
+  // - 정확히 일치 → 제거
+  // - 앞/뒤에 붙어있는 경우 → 해당 부분만 잘라내기
+  // - 중간에 포함된 경우 → 그대로 유지 (ex: "갤럭시Z플립5"에서 "z"가 중간 → 유지)
   const filteredProductTokens = productTokens
     .map(t => {
       let result = t;
       for (const sk of searchTokens) {
         if (sk.length < 2) continue;
-        const idx = result.toLowerCase().indexOf(sk);
-        if (idx !== -1) {
-          result = (result.slice(0, idx) + result.slice(idx + sk.length)).trim();
-        }
+        const tl = result.toLowerCase();
+        const idx = tl.indexOf(sk);
+        if (idx === -1) continue;
+        // 정확히 일치
+        if (tl === sk) return null;
+        // 앞에 붙어있는 경우 (ex: "z플립5케이스" → "케이스")
+        if (idx === 0) result = result.slice(sk.length).trim();
+        // 뒤에 붙어있는 경우 (ex: "갤럭시z플립5" → "갤럭시")
+        else if (idx + sk.length === tl.length) result = result.slice(0, idx).trim();
+        // 중간에 있는 경우 → 그대로 유지
       }
+      // 쉼표만 제거
+      result = result.replace(/,/g, '').trim();
       return result.length >= 1 ? result : null;
     })
     .filter(Boolean);
@@ -687,7 +696,9 @@ ${topWords}
       })
       .slice(0, addCount);
 
-    const finalTokens = [...filteredProductTokens, ...aiWords];
+    const finalTokens = [...filteredProductTokens, ...aiWords]
+      .map(t => t.replace(/,/g, '').trim())
+      .filter(t => t.length >= 1);
     const finalText   = finalTokens.join(' ');
     const charLen     = finalText.length;
 
