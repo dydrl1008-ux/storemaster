@@ -573,16 +573,22 @@ async function generateKeywords() {
   // 메인키워드 입력창 토큰도 함께
   const mainKwTokenSet = new Set([...searchTokens, ...mainTokens.map(t => t.toLowerCase())]);
 
-  // 상품명 토큰 중 검색키워드 구성 단어와 겹치는 것 제거
-  // 비교: 소문자 변환 후 서로 포함 관계 확인
-  const filteredProductTokens = productTokens.filter(t => {
-    const tl = t.toLowerCase();
-    // 검색키워드 전체(붙여쓰기)에 포함되는 경우 제거
-    if (searchKwFull.includes(tl) && tl.length >= 2) return false;
-    // 검색키워드 개별 토큰과 포함 관계인 경우 제거
-    if (searchTokens.some(sk => sk.length >= 2 && (sk.includes(tl) || tl.includes(sk)))) return false;
-    return true;
-  });
+  // 상품명 토큰에서 검색키워드 구성 단어 부분만 제거하고 나머지 보존
+  // ex: "갤럭시Z플립5" + searchToken "z플립5" → "갤럭시" 남김
+  // ex: "케이스" + searchToken "케이스" → 완전 제거
+  const filteredProductTokens = productTokens
+    .map(t => {
+      let result = t;
+      for (const sk of searchTokens) {
+        if (sk.length < 2) continue;
+        const idx = result.toLowerCase().indexOf(sk);
+        if (idx !== -1) {
+          result = (result.slice(0, idx) + result.slice(idx + sk.length)).trim();
+        }
+      }
+      return result.length >= 1 ? result : null;
+    })
+    .filter(Boolean);
 
   // 메인키워드 토큰 낱글자 Set (합성어 필터링용)
   const mainTokenSet = new Set(
