@@ -451,6 +451,10 @@ input[type="range"]::-webkit-slider-thumb:hover { transform: scale(1.2); }
     <div class="result-body">
       <div class="result-text" id="resultText"></div>
       <button class="btn-copy" id="copyBtn" onclick="copyResult()">복사</button>
+      <div id="brandRemovedBox" style="display:none;margin-top:12px;padding:8px 12px;background:rgba(255,85,85,0.07);border:1px solid rgba(255,85,85,0.2);border-radius:5px;">
+        <span style="font-family:var(--mono);font-size:10px;letter-spacing:0.08em;text-transform:uppercase;color:#ff7070;">제거된 브랜드명</span>
+        <span id="brandRemovedList" style="font-size:12px;color:#ff9090;margin-left:10px;"></span>
+      </div>
     </div>
   </div>
 
@@ -656,9 +660,22 @@ ${topWords}
 4. 정확히 30개
 5. 쉼표로 구분, 키워드만 출력 (번호, 설명 없이)`;
 
+  // 브랜드명 추출 프롬프트
+  const brandPrompt = `아래는 네이버 쇼핑에서 수집한 실제 상품명들입니다:
+${collectedTitles.slice(0, 40).join('\n')}
+
+위 상품명에서 브랜드명(제조사명, 회사명)만 추출해주세요.
+
+규칙:
+1. 브랜드명/회사명만 (예: 종근당, 정관장, 다이슨, 삼성, CJ 등)
+2. 일반 명사, 제품명, 모델명, 수식어는 제외
+3. 중복 제거
+4. 쉼표로 구분, 브랜드명만 출력 (설명 없이)
+5. 없으면 "없음" 출력`;
+
   try {
-    // 두 API 동시 호출
-    const [res1, res2] = await Promise.all([
+    // 3개 API 동시 호출
+    const [res1, res2, res3] = await Promise.all([
       fetch('/api/generate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -668,13 +685,19 @@ ${topWords}
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ prompt: acqPrompt })
+      }),
+      fetch('/api/generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ prompt: brandPrompt })
       })
     ]);
 
     if (!res1.ok) { const e = await res1.json().catch(()=>({})); throw new Error(e?.error || `HTTP ${res1.status}`); }
     if (!res2.ok) { const e = await res2.json().catch(()=>({})); throw new Error(e?.error || `HTTP ${res2.status}`); }
+    if (!res3.ok) { const e = await res3.json().catch(()=>({})); throw new Error(e?.error || `HTTP ${res3.status}`); }
 
-    const [data1, data2] = await Promise.all([res1.json(), res2.json()]);
+    const [data1, data2, data3] = await Promise.all([res1.json(), res2.json(), res3.json()]);
 
     // 상품명 키워드 처리 — 합성어 필터링 강화
     const raw1    = data1.text || '';
@@ -696,9 +719,26 @@ ${topWords}
       })
       .slice(0, addCount);
 
+    // 브랜드명 파싱
+    const raw3 = data3.text || '';
+    const brandNames = raw3.trim() === '없음' ? [] :
+      raw3.split(/[,，\n]/)
+        .map(s => s.trim().replace(/^[\d\.\-\*\s]+/, ''))
+        .filter(s => s.length >= 1 && s !== '없음');
+    const brandSet = new Set(brandNames.map(b => b.toLowerCase()));
+
+    // 완성 상품명에서 브랜드 토큰 제거
+    const removedBrands = [];
     const finalTokens = [...filteredProductTokens, ...aiWords]
       .map(t => t.replace(/,/g, '').trim())
-      .filter(t => t.length >= 1);
+      .filter(t => {
+        if (t.length < 1) return false;
+        if (brandSet.has(t.toLowerCase())) {
+          removedBrands.push(t);
+          return false;
+        }
+        return true;
+      });
     const finalText   = finalTokens.join(' ');
     const charLen     = finalText.length;
 
@@ -724,6 +764,15 @@ ${topWords}
 
     document.getElementById('resultCard').style.display = 'block';
     document.getElementById('tagsCard').style.display   = 'block';
+
+    // 브랜드 제거 표시
+    const brandBox = document.getElementById('brandRemovedBox');
+    if (removedBrands.length > 0) {
+      document.getElementById('brandRemovedList').textContent = removedBrands.join(', ');
+      brandBox.style.display = 'block';
+    } else {
+      brandBox.style.display = 'none';
+    }
 
     // ACQ 처리
     const raw2    = data2.text || '';
