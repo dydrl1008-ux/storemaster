@@ -459,7 +459,7 @@ input[type="range"]::-webkit-slider-thumb:hover { transform: scale(1.2); }
     <div class="tag-row" id="tagRow"></div>
     <div class="legend">
       <span class="legend-item"><span class="dot" style="background:#383838;"></span>원본 상품명</span>
-      <span class="legend-item"><span class="dot" style="background:rgba(74,158,255,0.5);"></span>메인 키워드</span>
+      <span class="legend-item"><span class="dot" style="background:rgba(74,158,255,0.5);"></span>메인 키워드 (필터용·완성 상품명 미포함)</span>
       <span class="legend-item"><span class="dot" style="background:rgba(200,255,0,0.5);"></span>AI 추출 키워드</span>
     </div>
   </div>
@@ -642,7 +642,7 @@ ${topWords}
       })
       .slice(0, addCount);
 
-    const finalTokens = [...productTokens, ...newMainTokens, ...aiWords];
+    const finalTokens = [...productTokens, ...aiWords];
     const finalText   = finalTokens.join(' ');
     const charLen     = finalText.length;
 
