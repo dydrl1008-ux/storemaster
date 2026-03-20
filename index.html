@@ -609,8 +609,11 @@ async function handleExcelUpload(event) {
             .map(t => t.replace(/[,{}[\]()]/g, '').trim())
             .filter(t => t.length >= 1).join(' ');
           const acqText = (d2.text||'')
+            .replace(/#\s*acq.*?[\n,]/gi, '')
+            .replace(/^.*acq.*$/gim, '')
+            .replace(/^.*키워드.*개.*$/gim, '')
             .split(/[,，\n]/)
-            .map(s => s.trim().replace(/^[\d\.\-\*\s]+/, '').replace(/^acq.*?[:：\s]+/i,'').replace(/^키워드.*?[:：\s]+/i,'').replace(/\(.*?\)/g,'').replace(/[{}[\]()]/g,'').trim())
+            .map(s => s.trim().replace(/^[\d\.\-\*#\s]+/, '').replace(/\(.*?\)/g,'').replace(/[{}[\]()#]/g,'').trim())
             .filter(s => s.length >= 2 && s.length <= 15)
             .slice(0, 30).join(', ');
 
@@ -786,14 +789,18 @@ ${topWords}
 
 이 상품을 구매하려는 소비자가 메인키워드를 검색하기 전에 먼저 검색할 만한 사전 탐색 키워드(ACQ) 30개를 뽑아주세요.
 
-예시: 메인키워드가 "무선선풍기"라면 → "선풍기추천", "여름가전추천", "소음없는선풍기", "거실선풍기" 같은 키워드
+예시: 메인키워드가 "무선선풍기"라면 → 선풍기추천, 여름가전추천, 소음없는선풍기, 거실선풍기
 
 규칙:
 1. 메인키워드 자체나 메인키워드를 포함한 합성어 금지
 2. 소비자의 니즈/상황/비교 탐색 단계를 반영한 키워드
 3. 실제 네이버에서 검색할 법한 자연스러운 키워드
 4. 정확히 30개
-5. 쉼표로 구분, 키워드만 출력 (번호, 설명 없이)`;
+5. 쉼표로 구분, 키워드만 출력
+6. "ACQ", "키워드", "#", 번호 등 절대 출력하지 말 것
+7. 첫 번째 출력부터 바로 키워드 시작할 것
+
+출력 예시: 선풍기추천, 여름가전추천, 소음없는선풍기, 거실선풍기, ...`;
 
   // 메인키워드 형태소 분해 프롬프트
   const decomposePrompt = `"${searchedKeyword}" 이 키워드를 의미 단위 명사로 분해해주세요.
@@ -942,13 +949,14 @@ ${collectedTitles.slice(0, 40).join('\n')}
     // ACQ 처리 - 설명/번호/레이블 제거하고 키워드만 추출
     const raw2 = data2.text || '';
     const acqWords = raw2
+      .replace(/#\s*acq.*?[\n,]/gi, '')           // "# ACQ 키워드 30개," 줄 제거
+      .replace(/^.*acq.*$/gim, '')                 // ACQ 포함된 줄 전체 제거
+      .replace(/^.*키워드.*개.*$/gim, '')           // "키워드 30개" 포함 줄 제거
       .split(/[,，\n]/)
       .map(s => s.trim()
-        .replace(/^[\d\.\-\*\s]+/, '')           // 앞 번호/기호 제거
-        .replace(/^acq.*?[:：\s]+/i, '')          // "ACQ:" 같은 레이블 제거
-        .replace(/^키워드.*?[:：\s]+/i, '')        // "키워드:" 레이블 제거
-        .replace(/\(.*?\)/g, '')                   // 괄호 안 내용 제거
-        .replace(/[{}[\]()]/g, '')                 // 괄호 문자 제거
+        .replace(/^[\d\.\-\*#\s]+/, '')
+        .replace(/\(.*?\)/g, '')
+        .replace(/[{}[\]()#]/g, '')
         .trim()
       )
       .filter(s => s.length >= 2 && s.length <= 15)
