@@ -6,6 +6,7 @@
 <title>네이버 쇼핑 키워드 빌더</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <style>
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -383,6 +384,22 @@ input[type="range"]::-webkit-slider-thumb:hover { transform: scale(1.2); }
     <p class="sub">네이버 쇼핑 실제 상품명 분석 → 내 상품에 없는 키워드만 자동 추출</p>
   </div>
 
+  <!-- 엑셀 일괄 처리 카드 -->
+  <div class="card" id="batchCard" style="margin-bottom:14px;border-color:rgba(200,255,0,0.2);background:rgba(200,255,0,0.03);">
+    <div class="card-title" style="color:var(--accent);">⚡ 엑셀 일괄 처리</div>
+    <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;">
+      <a href="#" onclick="downloadTemplate()" style="font-family:var(--mono);font-size:11px;color:var(--accent);border:1px solid var(--accent-border);background:var(--accent-dim);padding:6px 14px;border-radius:4px;text-decoration:none;letter-spacing:0.05em;">양식 다운로드</a>
+      <div style="flex:1;min-width:200px;">
+        <input type="file" id="excelUpload" accept=".xlsx,.xls" style="display:none;" onchange="handleExcelUpload(event)" />
+        <button class="btn btn-secondary" style="padding:8px 16px;font-size:11px;" onclick="document.getElementById('excelUpload').click()">
+          <span>엑셀 업로드</span>
+        </button>
+      </div>
+    </div>
+    <div class="status-box" id="batchStatus" style="margin-top:10px;"></div>
+    <div style="margin-top:8px;font-size:11px;color:var(--text3);font-family:var(--mono);">양식 다운로드 → 상품명/메인키워드 입력 → 업로드 → 결과 엑셀 자동 다운로드</div>
+  </div>
+
   <div class="steps">
     <div class="step active" id="step1"><span class="step-num">1</span>키워드 수집</div>
     <div class="step" id="step2"><span class="step-num">2</span>상품명 입력</div>
@@ -485,7 +502,145 @@ input[type="range"]::-webkit-slider-thumb:hover { transform: scale(1.2); }
 </div>
 <script>
 let collectedTitles = [];
-let searchedKeyword = ''; // 수집 시 사용한 검색키워드 저장
+let searchedKeyword = '';
+
+// ── 엑셀 양식 다운로드 ──
+function downloadTemplate() {
+  // SheetJS로 양식 생성
+  const wb = XLSX.utils.book_new();
+  const ws = XLSX.utils.aoa_to_sheet([
+    ['상품명', '메인키워드', '수집페이지수', '추가키워드개수'],
+    ['갤럭시Z플립5 케이스 맥세이프 2배자력', 'z플립5 케이스', 3, 10],
+    ['무선청소기 핸디형 가정용 강력흡입', '무선청소기', 3, 10],
+    ['홍삼정 6년근 홍삼액 스틱', '홍삼정', 3, 10],
+  ]);
+  ws['!cols'] = [{wch:45},{wch:20},{wch:14},{wch:14}];
+  XLSX.utils.book_append_sheet(wb, ws, '키워드빌더');
+  XLSX.writeFile(wb, '키워드빌더_양식.xlsx');
+}
+
+// ── 엑셀 업로드 처리 ──
+async function handleExcelUpload(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+
+  setBatchStatus(`📂 "${file.name}" 읽는 중...`);
+
+  const reader = new FileReader();
+  reader.onload = async (e) => {
+    try {
+      const wb = XLSX.read(e.target.result, { type: 'array' });
+      const ws = wb.Sheets[wb.SheetNames[0]];
+      const rows = XLSX.utils.sheet_to_json(ws, { header: 1 });
+
+      // 헤더 제외, 빈 행 제거
+      const dataRows = rows.slice(1).filter(r => r[0] && r[1]);
+      if (dataRows.length === 0) return setBatchStatus('❌ 데이터가 없어요. 양식을 확인해주세요.');
+
+      setBatchStatus(`⚙️ 총 ${dataRows.length}개 상품 처리 시작... (행마다 네이버 수집 포함)`);
+
+      const results = [];
+      for (let i = 0; i < dataRows.length; i++) {
+        const [productName, mainKeyword, pages = 3, addCount = 10] = dataRows[i];
+        setBatchStatus(`⚙️ [${i+1}/${dataRows.length}] "${productName.slice(0,20)}..." 처리 중...`);
+
+        try {
+          // 1. 네이버 수집
+          const searchRes = await fetch('/api/search', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ keyword: mainKeyword, pages: parseInt(pages) })
+          });
+          const searchData = await searchRes.json();
+          const titles = searchData.titles || [];
+
+          // 2. 빈도 분석
+          const tokens = mainKeyword.toLowerCase().split(/[\s,，]+/).filter(Boolean);
+          const existing = productName.toLowerCase().split(/\s+/).map(t => t.replace(/,/g,''));
+          const wordFreq = {};
+          titles.forEach(t => {
+            t.split(/\s+/).forEach(w => {
+              const wl = w.toLowerCase().replace(/[^가-힣a-z0-9]/g,'');
+              if (wl.length >= 2 && !existing.includes(wl)) wordFreq[wl] = (wordFreq[wl]||0)+1;
+            });
+          });
+          const topWords = Object.entries(wordFreq).sort((a,b)=>b[1]-a[1]).slice(0,60).map(([w,c])=>`${w}(${c})`).join(', ');
+
+          // 3. AI 3개 동시 호출
+          const kwPrompt = `네이버 쇼핑 상품명 ${titles.length}개 분석 결과 빈도 키워드:\n${topWords}\n\n상품명: ${productName}\n메인키워드: ${mainKeyword}\n이미포함: ${existing.join(', ')}\n\n추가 명사 키워드 ${addCount}개 뽑아주세요.\n규칙: 1.중복금지 2.메인키워드 합성어 금지 3.독립명사만 4.정확히${addCount}개 5.쉼표구분 키워드만`;
+          const acqPrompt = `메인키워드: "${mainKeyword}"\n상품명: ${productName}\n\n소비자가 메인키워드 검색 전 먼저 검색할 ACQ 키워드 30개.\n규칙: 1.메인키워드 포함 합성어 금지 2.탐색단계 키워드 3.정확히30개 4.쉼표구분 키워드만`;
+          const decompPrompt = `"${mainKeyword}" 키워드를 의미 단위 명사로 분해.\n예: "무선청소기"→무선,청소기 / "z플립5케이스"→z플립5,케이스\n쉼표구분, 결과만 출력`;
+
+          const [r1, r2, r3] = await Promise.all([
+            fetch('/api/generate', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({prompt: kwPrompt}) }),
+            fetch('/api/generate', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({prompt: acqPrompt}) }),
+            fetch('/api/generate', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({prompt: decompPrompt}) }),
+          ]);
+          const [d1, d2, d3] = await Promise.all([r1.json(), r2.json(), r3.json()]);
+
+          // 4. 분해 토큰
+          const decompTokens = new Set([...tokens, ...( d3.text||'').split(/[,，\n]/).map(s=>s.trim().toLowerCase()).filter(s=>s.length>=2)]);
+
+          // 5. 상품명 필터링
+          const productTokens = productName.split(/\s+/).filter(Boolean);
+          const filteredTokens = productTokens.map(t => {
+            let r = t;
+            for (const sk of decompTokens) {
+              if (sk.length < 2) continue;
+              const tl = r.toLowerCase();
+              if (tl === sk) return null;
+              if (tl.endsWith(sk)) r = r.slice(0, tl.length - sk.length).trim();
+              else if (tl.startsWith(sk)) r = r.slice(sk.length).trim();
+            }
+            r = r.replace(/,/g,'').trim();
+            return r.length >= 1 ? r : null;
+          }).filter(Boolean);
+
+          // 6. AI 키워드 파싱
+          const aiWords = (d1.text||'').split(/[,，\n]/).map(s=>s.trim().replace(/^[\d\.\-\*\s]+/,'')).filter(s => {
+            if (!s || s.length===0 || s.length>12) return false;
+            const sl = s.toLowerCase();
+            if (existing.includes(sl)) return false;
+            if ([...decompTokens].some(dk => dk.length>=2 && sl.includes(dk))) return false;
+            return true;
+          }).slice(0, parseInt(addCount));
+
+          const finalName = [...filteredTokens, ...aiWords].map(t=>t.replace(/,/g,'')).filter(t=>t.length>=1).join(' ');
+          const acqText = (d2.text||'').split(/[,，\n]/).map(s=>s.trim().replace(/^[\d\.\-\*\s]+/,'')).filter(s=>s.length>0).slice(0,30).join(', ');
+
+          results.push({ productName, mainKeyword, finalName, acqText, status: '완료' });
+        } catch(err) {
+          results.push({ productName, mainKeyword, finalName: '', acqText: '', status: '오류: '+err.message });
+        }
+
+        // API 과부하 방지 딜레이
+        await new Promise(r => setTimeout(r, 500));
+      }
+
+      // 7. 결과 엑셀 생성
+      setBatchStatus(`📊 결과 엑셀 생성 중...`);
+      const outWb = XLSX.utils.book_new();
+      const outData = [['원본 상품명','메인키워드','완성 상품명','ACQ 30개','상태']];
+      results.forEach(r => outData.push([r.productName, r.mainKeyword, r.finalName, r.acqText, r.status]));
+      const outWs = XLSX.utils.aoa_to_sheet(outData);
+      outWs['!cols'] = [{wch:40},{wch:20},{wch:80},{wch:120},{wch:10}];
+      XLSX.utils.book_append_sheet(outWb, outWs, '결과');
+      XLSX.writeFile(outWb, '키워드빌더_결과.xlsx');
+      setBatchStatus(`✅ 완료! ${results.length}개 처리 → 결과 엑셀 다운로드됨`);
+
+    } catch(err) {
+      setBatchStatus('❌ 오류: ' + err.message);
+    }
+  };
+  reader.readAsArrayBuffer(file);
+  event.target.value = '';
+}
+
+function setBatchStatus(msg) {
+  const el = document.getElementById('batchStatus');
+  el.textContent = msg;
+  el.classList.toggle('visible', !!msg);
+}
 
 async function searchNaver() {
   const keyword = document.getElementById('searchKeyword').value.trim();
