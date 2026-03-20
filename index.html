@@ -605,8 +605,14 @@ async function handleExcelUpload(event) {
             return true;
           }).slice(0, parseInt(addCount));
 
-          const finalName = [...filteredTokens, ...aiWords].map(t=>t.replace(/,/g,'')).filter(t=>t.length>=1).join(' ');
-          const acqText = (d2.text||'').split(/[,，\n]/).map(s=>s.trim().replace(/^[\d\.\-\*\s]+/,'')).filter(s=>s.length>0).slice(0,30).join(', ');
+          const finalName = [...filteredTokens, ...aiWords]
+            .map(t => t.replace(/[,{}[\]()]/g, '').trim())
+            .filter(t => t.length >= 1).join(' ');
+          const acqText = (d2.text||'')
+            .split(/[,，\n]/)
+            .map(s => s.trim().replace(/^[\d\.\-\*\s]+/, '').replace(/^acq.*?[:：\s]+/i,'').replace(/^키워드.*?[:：\s]+/i,'').replace(/\(.*?\)/g,'').replace(/[{}[\]()]/g,'').trim())
+            .filter(s => s.length >= 2 && s.length <= 15)
+            .slice(0, 30).join(', ');
 
           results.push({ productName, mainKeyword, finalName, acqText, status: '완료' });
         } catch(err) {
@@ -886,10 +892,10 @@ ${collectedTitles.slice(0, 40).join('\n')}
         .filter(s => s.length >= 1 && s !== '없음');
     const brandSet = new Set(brandNames.map(b => b.toLowerCase()));
 
-    // 완성 상품명에서 브랜드 토큰 제거
+    // 완성 상품명에서 브랜드 토큰 제거 + 괄호 특수문자 제거
     const removedBrands = [];
     const finalTokens = [...filteredProductTokens, ...aiWords]
-      .map(t => t.replace(/,/g, '').trim())
+      .map(t => t.replace(/[,{}[\]()]/g, '').trim())
       .filter(t => {
         if (t.length < 1) return false;
         if (brandSet.has(t.toLowerCase())) {
@@ -933,12 +939,19 @@ ${collectedTitles.slice(0, 40).join('\n')}
       brandBox.style.display = 'none';
     }
 
-    // ACQ 처리
-    const raw2    = data2.text || '';
+    // ACQ 처리 - 설명/번호/레이블 제거하고 키워드만 추출
+    const raw2 = data2.text || '';
     const acqWords = raw2
       .split(/[,，\n]/)
-      .map(s => s.trim().replace(/^[\d\.\-\*\s]+/, ''))
-      .filter(s => s.length > 0 && s.length <= 15)
+      .map(s => s.trim()
+        .replace(/^[\d\.\-\*\s]+/, '')           // 앞 번호/기호 제거
+        .replace(/^acq.*?[:：\s]+/i, '')          // "ACQ:" 같은 레이블 제거
+        .replace(/^키워드.*?[:：\s]+/i, '')        // "키워드:" 레이블 제거
+        .replace(/\(.*?\)/g, '')                   // 괄호 안 내용 제거
+        .replace(/[{}[\]()]/g, '')                 // 괄호 문자 제거
+        .trim()
+      )
+      .filter(s => s.length >= 2 && s.length <= 15)
       .slice(0, 30);
 
     document.getElementById('acqText').textContent = acqWords.join(', ');
