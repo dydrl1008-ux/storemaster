@@ -443,6 +443,10 @@ input[type="range"]::-webkit-slider-thumb:hover { transform: scale(1.2); }
       <input type="text" id="mainKeyword" placeholder="예: 무선선풍기, BLDC선풍기 (추가할 키워드)" />
     </div>
     <div class="field">
+      <label>제외 키워드 (선택)</label>
+      <input type="text" id="excludeKeyword" placeholder="예: 삼성, 핸디형, 무소음 (쉼표로 구분)" />
+    </div>
+    <div class="field">
       <label>추가 키워드 개수</label>
       <div class="slider-wrap">
         <input type="range" id="addCount" min="1" max="30" value="10" step="1"
@@ -509,12 +513,12 @@ function downloadTemplate() {
   // SheetJS로 양식 생성
   const wb = XLSX.utils.book_new();
   const ws = XLSX.utils.aoa_to_sheet([
-    ['상품명', '메인키워드', '수집페이지수', '추가키워드개수'],
-    ['갤럭시Z플립5 케이스 맥세이프 2배자력', 'z플립5 케이스', 3, 10],
-    ['무선청소기 핸디형 가정용 강력흡입', '무선청소기', 3, 10],
-    ['홍삼정 6년근 홍삼액 스틱', '홍삼정', 3, 10],
+    ['상품명', '메인키워드', '수집페이지수', '추가키워드개수', '제외키워드'],
+    ['갤럭시Z플립5 케이스 맥세이프 2배자력', 'z플립5 케이스', 3, 10, ''],
+    ['무선청소기 핸디형 가정용 강력흡입', '무선청소기', 3, 10, '핸디형,가정용'],
+    ['홍삼정 6년근 홍삼액 스틱', '홍삼정', 3, 10, ''],
   ]);
-  ws['!cols'] = [{wch:45},{wch:20},{wch:14},{wch:14}];
+  ws['!cols'] = [{wch:45},{wch:20},{wch:14},{wch:14},{wch:25}];
   XLSX.utils.book_append_sheet(wb, ws, '키워드빌더');
   XLSX.writeFile(wb, '키워드빌더_양식.xlsx');
 }
@@ -541,7 +545,12 @@ async function handleExcelUpload(event) {
 
       const results = [];
       for (let i = 0; i < dataRows.length; i++) {
-        const [productName, mainKeyword, pages = 3, addCount = 10] = dataRows[i];
+        const [productName, mainKeyword, pages = 3, addCount = 10, excludeRaw = ''] = dataRows[i];
+        const batchExclude = excludeRaw ? String(excludeRaw).split(/[,，]+/).map(s => s.trim().toLowerCase().replace(/\s+/g,'')).filter(Boolean) : [];
+        const batchIsExcluded = (str) => {
+          const s = str.toLowerCase().replace(/\s+/g,'');
+          return batchExclude.some(ex => s === ex || s.includes(ex) || (ex.includes(s) && ex.length >= 2));
+        };
         setBatchStatus(`⚙️ [${i+1}/${dataRows.length}] "${productName.slice(0,20)}..." 처리 중...`);
 
         try {
@@ -607,7 +616,7 @@ async function handleExcelUpload(event) {
 
           const finalName = [...filteredTokens, ...aiWords]
             .map(t => t.replace(/[,{}[\]()]/g, '').trim())
-            .filter(t => t.length >= 1).join(' ');
+            .filter(t => t.length >= 1 && !batchIsExcluded(t)).join(' ');
           const acqText = (d2.text||'')
             .replace(/#\s*acq.*?[\n,]/gi, '')
             .replace(/^.*acq.*$/gim, '')
@@ -715,9 +724,21 @@ async function searchNaver() {
 }
 
 async function generateKeywords() {
-  const productName = document.getElementById('productName').value.trim();
-  const mainKeyword = document.getElementById('mainKeyword').value.trim();
-  const addCount    = parseInt(document.getElementById('addCount').value);
+  const productName    = document.getElementById('productName').value.trim();
+  const mainKeyword    = document.getElementById('mainKeyword').value.trim();
+  const excludeInput   = document.getElementById('excludeKeyword').value.trim();
+  const addCount       = parseInt(document.getElementById('addCount').value);
+
+  // 제외 키워드 파싱 - 쉼표 단위, 소문자+공백제거로 저장
+  const excludeTokens = excludeInput
+    ? excludeInput.split(/[,，]+/).map(s => s.trim().toLowerCase().replace(/\s+/g, '')).filter(Boolean)
+    : [];
+
+  // 제외 키워드 매칭 함수 - 비교 대상도 공백 제거 후 비교
+  const isExcluded = (str) => {
+    const s = str.toLowerCase().replace(/\s+/g, '');
+    return excludeTokens.some(ex => s === ex || s.includes(ex) || ex.includes(s) && ex.length >= 2);
+  };
 
   if (!productName) return showErr(2, '내 상품명을 입력해주세요.');
   hideErr(2);
@@ -887,6 +908,8 @@ ${collectedTitles.slice(0, 40).join('\n')}
         if ([...decomposedTokens].some(dk => dk.length >= 2 && sl.includes(dk))) return false;
         // 기존 상품명 토큰 포함 합성어 제거
         if (allExisting.some(ex => ex.length >= 2 && sl.includes(ex))) return false;
+        // 제외 키워드 포함 여부
+        if (isExcluded(s)) return false;
         return true;
       })
       .slice(0, addCount);
@@ -899,16 +922,17 @@ ${collectedTitles.slice(0, 40).join('\n')}
         .filter(s => s.length >= 1 && s !== '없음');
     const brandSet = new Set(brandNames.map(b => b.toLowerCase()));
 
-    // 완성 상품명에서 브랜드 토큰 제거 + 괄호 특수문자 제거
+    // 완성 상품명에서 브랜드 토큰 제거 + 괄호 특수문자 제거 + 제외 키워드 제거
     const removedBrands = [];
     const finalTokens = [...filteredProductTokens, ...aiWords]
       .map(t => t.replace(/[,{}[\]()]/g, '').trim())
       .filter(t => {
         if (t.length < 1) return false;
-        if (brandSet.has(t.toLowerCase())) {
-          removedBrands.push(t);
-          return false;
-        }
+        const tl = t.toLowerCase();
+        // 브랜드 제거
+        if (brandSet.has(tl)) { removedBrands.push(t); return false; }
+        // 제외 키워드
+        if (isExcluded(t)) return false;
         return true;
       });
     const finalText   = finalTokens.join(' ');
