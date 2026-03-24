@@ -928,10 +928,10 @@ ${collectedTitles.slice(0, 40).join('\n')}
       .map(t => t.replace(/[,{}[\]()]/g, '').trim())
       .filter(t => {
         if (t.length < 1) return false;
+        // 단독 알파벳 1~2자 토큰 제거 (l, w, L, W 등 구분자)
+        if (/^[a-zA-Z]{1,2}$/.test(t)) return false;
         const tl = t.toLowerCase();
-        // 브랜드 제거
         if (brandSet.has(tl)) { removedBrands.push(t); return false; }
-        // 제외 키워드
         if (isExcluded(t)) return false;
         return true;
       });
