@@ -7,6 +7,7 @@
   "routes": [
     { "src": "/api/(.*)", "dest": "/api/$1.js" },
     { "src": "/product-info.html", "dest": "/product-info.html" },
+    { "src": "/tag-extractor.html", "dest": "/tag-extractor.html" },
     { "src": "/(.*)", "dest": "/index.html" }
   ]
 }
