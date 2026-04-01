@@ -133,7 +133,10 @@ let stopFlag = false;
 async function checkServer() {
   const el = document.getElementById('serverStatus');
   try {
-    const res = await fetch(API + '/health', { signal: AbortSignal.timeout(2000) });
+    const res = await fetch(API + '/health', { 
+      signal: AbortSignal.timeout(3000),
+      headers: { 'ngrok-skip-browser-warning': 'true' }
+    });
     const data = await res.json();
     if (data.status === 'ok') {
       el.className = 'server-status ok';
@@ -185,7 +188,7 @@ async function searchSingle() {
   try {
     const params = new URLSearchParams({ query });
     if (nvmid) params.append('nvmid', nvmid);
-    const res = await fetch(`${API}/search?${params}`);
+    const res = await fetch(`${API}/search?${params}`, { headers: { 'ngrok-skip-browser-warning': 'true' } });
     const d = await res.json();
     renderSingle(d, query);
   } catch (e) {
@@ -281,7 +284,7 @@ async function startBulk() {
     try {
       const params = new URLSearchParams({ query: item.query });
       if (item.nvmid) params.append('nvmid', item.nvmid);
-      const res = await fetch(`${API}/search?${params}`);
+      const res = await fetch(`${API}/search?${params}`, { headers: { 'ngrok-skip-browser-warning': 'true' } });
       const d = await res.json();
       bulkResults.push({ query: item.query, nvmid: item.nvmid, ...d });
     } catch {
@@ -350,3 +353,12 @@ document.getElementById('queryInput').addEventListener('keydown', e => { if(e.ke
 </script>
 </body>
 </html>
+You are about to visit:
+
+undeposable-inarguably-renna.ngrok-free.dev
+
+Website IP: 211.205.68.33
+
+This website is served for free through ngrok.com.
+You should only visit this website if you trust whoever sent the link to you.
+Be careful about disclosing personal or financial information like passwords, phone numbers, or credit cards.
