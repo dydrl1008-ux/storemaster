@@ -159,15 +159,23 @@ function switchTab(tab) {
 }
 
 function makeCompleted(productName, attributes) {
-  const nameWords = productName.toLowerCase().replace(/[^\uAC00-\uD7A3a-z0-9\s]/g, '').split(/\s+/).filter(w => w.length >= 2);
+  const nameNorm = productName.toLowerCase().replace(/[^\uAC00-\uD7A3a-z0-9.\s]/g, '');
+  const nameWords = nameNorm.split(/\s+/).filter(w => w.length >= 2);
+
   const isOverlap = (word) => {
-    const wl = word.toLowerCase().replace(/[^\uAC00-\uD7A3a-z0-9]/g, '');
+    const wl = word.toLowerCase().replace(/[^\uAC00-\uD7A3a-z0-9.]/g, '');
     if (wl.length < 2) return true;
+    // 숫자+단위 패턴 비교 (0.4L vs 04L 등 - 숫자만 비교)
+    const numOnly = wl.replace(/[^0-9]/g, '');
+    if (numOnly.length > 0) {
+      if (nameWords.some(nw => nw.replace(/[^0-9]/g, '') === numOnly && numOnly.length > 0)) return true;
+    }
     return nameWords.some(nw => nw.includes(wl) || wl.includes(nw));
   };
+
   const attrWords = [];
   Object.values(attributes).forEach(val => {
-    val.split(/[,\/\s]+/).map(v => v.replace(/[^\uAC00-\uD7A3a-zA-Z0-9]/g,'').trim()).filter(v => v.length >= 2).forEach(v => {
+    val.split(/[,\/\s]+/).map(v => v.replace(/[^\uAC00-\uD7A3a-zA-Z0-9.]/g,'').trim()).filter(v => v.length >= 2).forEach(v => {
       if (!isOverlap(v) && !attrWords.includes(v)) attrWords.push(v);
     });
   });
