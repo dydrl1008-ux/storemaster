@@ -66,6 +66,7 @@ textarea:focus { border-color: #03c75a; }
 .b-err { background: #fff0f0; color: #c0392b; }
 .b-nf { background: #fff8f0; color: #c67c00; }
 .b-mis { background: #f0f0ff; color: #5050cc; }
+.b-na { background: #f5f5f5; color: #888; }
 
 .error-box { background: #fff5f5; border: 1px solid #fcc; border-radius: 10px; padding: 12px; font-size: 13px; color: #c0392b; margin-bottom: 12px; }
 .loading { text-align: center; padding: 1.5rem; font-size: 13px; color: #aaa; }
@@ -212,6 +213,10 @@ function renderSingle(d, query) {
   const r = document.getElementById('singleResult');
   if (d.status === 'notFound') { r.innerHTML = '<div class="empty">상품을 찾을 수 없습니다</div>'; return; }
   if (d.status === 'nvmidMismatch') { r.innerHTML = '<div class="empty" style="color:#5050cc">nvmid 불일치</div>'; return; }
+  if (d.status === 'noAttributes') {
+    r.innerHTML = `<div class="card"><div class="prod-name">${d.productName || '-'}</div><div style="font-size:12px;color:#888;margin-top:6px;">✓ nvmid 일치 — 속성 없는 상품</div></div>`;
+    return;
+  }
   if (d.status === 'error') { r.innerHTML = `<div class="empty">오류: ${d.error}</div>`; return; }
 
   const completed1 = makeCompleted(d.productName || '', d.attributes || {});
@@ -325,6 +330,7 @@ function renderBulk() {
   document.getElementById('bulkResult').innerHTML = bulkResults.map(d => {
     const badge = d.status === 'success' ? '<span class="sbadge b-ok">완료</span>'
       : d.status === 'nvmidMismatch' ? '<span class="sbadge b-mis">nvmid불일치</span>'
+      : d.status === 'noAttributes' ? '<span class="sbadge b-na">속성없음</span>'
       : d.status === 'notFound' ? '<span class="sbadge b-nf">미발견</span>'
       : '<span class="sbadge b-err">오류</span>';
     const tags = (d.tags || []).slice(0, 5).map(t => `<span class="ri-tag">#${t}</span>`).join('');
@@ -347,7 +353,7 @@ function exportCSV() {
     const attrs = Object.entries(d.attributes || {}).map(([k,v]) => `${k}: ${v}`).join(' / ');
     const c1 = d.status === 'success' ? makeCompleted(d.productName || '', d.attributes || {}) : '';
     const c2 = c1 + (d.tags?.length ? ' ' + d.tags.join(' ') : '');
-    const fail = d.status === 'nvmidMismatch' ? 'nvmid 불일치' : d.status === 'notFound' ? '미발견' : d.status === 'error' ? (d.error || '오류') : '';
+    const fail = d.status === 'nvmidMismatch' ? 'nvmid 불일치' : d.status === 'noAttributes' ? '속성없는상품(nvmid일치)' : d.status === 'notFound' ? '미발견' : d.status === 'error' ? (d.error || '오류') : '';
     return [d.query||'', d.nvmid||'', d.productName||'', (d.tags||[]).join(' '), attrs, c1, c2, fail];
   });
   const csv = [headers, ...rows].map(r => r.map(c => `"${String(c).replace(/"/g,'""')}"`).join(',')).join('\n');
