@@ -78,6 +78,11 @@ textarea:focus { border-color: #03c75a; }
     <div class="server-status" id="serverStatus">
       <div class="dot"></div><span>서버 확인 중...</span>
     </div>
+    <div style="margin-top:10px; display:flex; gap:8px; align-items:center;">
+      <input type="password" id="apiKeyInput" placeholder="Anthropic API 키 (sk-ant-...)" style="flex:1; padding:8px 12px; border:1.5px solid #ddd; border-radius:8px; font-size:12px; outline:none;" />
+      <button onclick="saveApiKey()" style="padding:8px 14px; background:#111; color:#fff; border:none; border-radius:8px; font-size:12px; cursor:pointer;">저장</button>
+      <span id="apiKeySaved" style="font-size:11px; color:#018d4c; display:none;">✓ 저장됨</span>
+    </div>
   </div>
 
   <div class="tabs">
@@ -129,6 +134,68 @@ textarea:focus { border-color: #03c75a; }
 const API = 'https://undeposable-inarguably-renna.ngrok-free.dev';
 let bulkResults = [];
 let stopFlag = false;
+let morphemeCache = {}; // 형태소 분해 캐시
+
+// API 키 저장/불러오기
+function saveApiKey() {
+  const key = document.getElementById('apiKeyInput').value.trim();
+  localStorage.setItem('anthropic_api_key', key);
+  const saved = document.getElementById('apiKeySaved');
+  saved.style.display = 'inline';
+  setTimeout(() => saved.style.display = 'none', 2000);
+}
+
+function getApiKey() {
+  return localStorage.getItem('anthropic_api_key') || '';
+}
+
+// 페이지 로드 시 API 키 복원
+window.addEventListener('DOMContentLoaded', () => {
+  const key = getApiKey();
+  if (key) document.getElementById('apiKeyInput').value = key;
+});
+
+// AI로 필수키워드 형태소 분해
+async function getMorphemes(keywords) {
+  if (!keywords.length) return [];
+  const cacheKey = keywords.join(',');
+  if (morphemeCache[cacheKey]) return morphemeCache[cacheKey];
+
+  const apiKey = getApiKey();
+  if (!apiKey) return keywords; // API 키 없으면 원본 그대로
+
+  try {
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': apiKey,
+        'anthropic-version': '2023-06-01',
+        'anthropic-dangerous-direct-browser-access': 'true'
+      },
+      body: JSON.stringify({
+        model: 'claude-haiku-4-5-20251001',
+        max_tokens: 200,
+        messages: [{
+          role: 'user',
+          content: `다음 키워드들을 의미있는 형태소 단위로 분해해주세요. 결과는 JSON 배열로만 출력하세요.
+예시: "작두콩차" → ["작두콩", "콩차", "작두", "차"]
+예시: "보조배터리" → ["보조배터리", "배터리", "보조"]
+키워드: ${keywords.join(', ')}
+JSON 배열만 출력 (설명 없이):`
+        }]
+      })
+    });
+    const data = await res.json();
+    const text = data.content?.[0]?.text?.trim() || '[]';
+    const clean = text.replace(/```json|```/g, '').trim();
+    const morphemes = JSON.parse(clean);
+    morphemeCache[cacheKey] = morphemes;
+    return morphemes;
+  } catch {
+    return keywords;
+  }
+}
 
 async function checkServer() {
   const el = document.getElementById('serverStatus');
@@ -201,15 +268,23 @@ function isOverlap(word, baseWords) {
   return baseWords.some(nw => nw.includes(wl) || wl.includes(nw));
 }
 
-function extractNewWords(values, baseWords, requiredKws) {
-  const kwSubs = getKwSubstrings(requiredKws);
+function extractNewWords(values, baseWords, morphemes) {
   const result = [];
   values.forEach(val => {
     val.split(/[,\/\s]+/).map(v => v.trim()).filter(v => v.length >= 2).forEach(v => {
       const vClean = v.replace(/[^\uAC00-\uD7A3a-zA-Z0-9.]/g,'');
       if (vClean.length < 2) return;
-      // 필수키워드 부분 제거 후 나머지
-      let remaining = kwSubs.length > 0 ? removeKwFromWord(vClean, kwSubs) : vClean;
+
+      // 형태소 단위로 제거 후 나머지 추출
+      let remaining = vClean;
+      for (const m of morphemes) {
+        const mClean = m.replace(/[^\uAC00-\uD7A3a-zA-Z0-9]/g,'');
+        if (mClean.length >= 2 && remaining.includes(mClean)) {
+          remaining = remaining.split(mClean).join('');
+        }
+      }
+      remaining = remaining.trim();
+
       // 나머지 2글자 미만이면 버림
       if (remaining.length < 2) return;
       // 상품명+필수키워드와 겹치면 버림
@@ -220,7 +295,7 @@ function extractNewWords(values, baseWords, requiredKws) {
   return result;
 }
 
-function makeCompleted(productName, attributes, tags, requiredKws) {
+async function makeCompleted(productName, attributes, tags, requiredKws) {
   const baseWords = makeBaseWords(productName, requiredKws);
 
   // 상품명에서 필수키워드와 겹치는 단어 제거
@@ -228,7 +303,7 @@ function makeCompleted(productName, attributes, tags, requiredKws) {
   // 괄호 제거 (내용은 유지)
   cleanName = cleanName.replace(/\(([^)]+)\)/g, ' $1').replace(/\s+/g, ' ').trim();
   if (requiredKws.length > 0) {
-    const nameTokens = productName.split(/\s+/);
+    const nameTokens = cleanName.split(/\s+/);
     const filteredTokens = nameTokens.filter(token => {
       const t = token.toLowerCase().replace(/[^\uAC00-\uD7A3a-z0-9.]/g, '');
       if (t.length < 2) return true;
@@ -240,11 +315,14 @@ function makeCompleted(productName, attributes, tags, requiredKws) {
     cleanName = filteredTokens.join(' ').replace(/\s+/g, ' ').trim();
   }
 
+  // AI로 형태소 분해
+  const morphemes = await getMorphemes(requiredKws);
+
   const cleanNameWords = cleanName.toLowerCase().replace(/[^\uAC00-\uD7A3a-z0-9.\s]/g, '').split(/\s+/).filter(w => w.length >= 2);
   const allBaseWords = [...baseWords, ...cleanNameWords];
 
-  const attrWords = extractNewWords(Object.values(attributes), allBaseWords, requiredKws);
-  const tagWords = extractNewWords(tags, [...allBaseWords, ...attrWords], requiredKws);
+  const attrWords = extractNewWords(Object.values(attributes), allBaseWords, morphemes);
+  const tagWords = extractNewWords(tags, [...allBaseWords, ...attrWords], morphemes);
 
   const c1 = [cleanName, ...attrWords].join(' ').trim();
   const c2 = [cleanName, ...tagWords].join(' ').trim();
@@ -287,14 +365,15 @@ async function searchSingle() {
   }
 }
 
-function renderSingle(d, requiredKws) {
+async function renderSingle(d, requiredKws) {
   const r = document.getElementById('singleResult');
   if (d.status === 'notFound') { r.innerHTML = '<div class="empty">상품을 찾을 수 없습니다</div>'; return; }
   if (d.status === 'nvmidMismatch') { r.innerHTML = `<div class="empty" style="color:#5050cc">nvmid 불일치<br><small style="color:#aaa">${d.error||''}</small></div>`; return; }
   if (d.status === 'noAttributes') { r.innerHTML = `<div class="card"><div class="prod-name">${d.productName||'-'}</div><div style="font-size:12px;color:#888;margin-top:6px;">✓ nvmid 일치 — 속성 없는 상품</div></div>`; return; }
   if (d.status === 'error') { r.innerHTML = `<div class="empty">오류: ${d.error}</div>`; return; }
 
-  const { c1, c2, c3 } = makeCompleted(d.productName||'', d.attributes||{}, d.tags||[], [...requiredKws, ...(d.brandNames||[])]);
+  r.innerHTML = '<div class="loading">완성 상품명 생성 중...</div>';
+  const { c1, c2, c3 } = await makeCompleted(d.productName||'', d.attributes||{}, d.tags||[], [...requiredKws, ...(d.brandNames||[])]);
 
   let html = `<div class="card"><div class="prod-name">${d.productName||'-'}</div></div>`;
 
@@ -398,37 +477,38 @@ function setProgress(done, total) {
   document.getElementById('progressText').textContent = `${done} / ${total} 완료`;
 }
 
-function renderBulk() {
-  document.getElementById('bulkResult').innerHTML = bulkResults.map(d => {
+async function renderBulk() {
+  const items = await Promise.all(bulkResults.map(async d => {
     const badge = d.status === 'success' ? '<span class="sbadge b-ok">완료</span>'
       : d.status === 'noAttributes' ? '<span class="sbadge b-na">속성없음</span>'
       : d.status === 'nvmidMismatch' ? '<span class="sbadge b-mis">nvmid불일치</span>'
       : d.status === 'notFound' ? '<span class="sbadge b-nf">미발견</span>'
       : '<span class="sbadge b-err">오류</span>';
     const kws = [...(d.requiredKws || []), ...(d.brandNames || [])];
-    const { c1 } = d.status === 'success' ? makeCompleted(d.productName||'', d.attributes||{}, d.tags||[], kws) : { c1: '' };
+    const { c1 } = d.status === 'success' ? await makeCompleted(d.productName||'', d.attributes||{}, d.tags||[], kws) : { c1: '' };
     const failReason = d.status !== 'success' ? `<div class="ri-err">${d.error||d.status}</div>` : '';
     return `<div class="result-item">
       <div class="ri-name">${d.productName||d.query}${badge}</div>
       ${c1 ? `<div class="ri-comp" style="color:#018d4c">1차: ${c1}</div>` : ''}
       ${failReason}
     </div>`;
-  }).join('');
+  }));
+  document.getElementById('bulkResult').innerHTML = items.join('');
 }
 
-function exportCSV() {
+async function exportCSV() {
   if (!bulkResults.length) return;
   const headers = ['검색어','nvmid','상품명','태그','속성','완성상품명1차(속성)','완성상품명2차(태그)','완성상품명3차(속성+태그)','실패사유'];
-  const rows = bulkResults.map(d => {
+  const rows = await Promise.all(bulkResults.map(async d => {
     const kws = [...(d.requiredKws || []), ...(d.brandNames || [])];
     const attrs = Object.entries(d.attributes||{}).map(([k,v])=>`${k}: ${v}`).join(' / ');
-    const { c1, c2, c3 } = d.status === 'success' ? makeCompleted(d.productName||'', d.attributes||{}, d.tags||[], kws) : { c1:'', c2:'', c3:'' };
+    const { c1, c2, c3 } = d.status === 'success' ? await makeCompleted(d.productName||'', d.attributes||{}, d.tags||[], kws) : { c1:'', c2:'', c3:'' };
     const fail = d.status === 'nvmidMismatch' ? 'nvmid 불일치'
       : d.status === 'noAttributes' ? '속성없는상품(nvmid일치)'
       : d.status === 'notFound' ? '미발견'
       : d.status === 'error' ? (d.error||'오류') : '';
     return [d.query||'', d.nvmid||'', d.productName||'', (d.tags||[]).join(' '), attrs, c1, c2, c3, fail];
-  });
+  }));
   const csv = [headers,...rows].map(r=>r.map(c=>`"${String(c).replace(/"/g,'""')}"`).join(',')).join('\n');
   const a = document.createElement('a');
   a.href = URL.createObjectURL(new Blob(['\uFEFF'+csv], {type:'text/csv;charset=utf-8;'}));
