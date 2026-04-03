@@ -134,6 +134,7 @@ textarea:focus { border-color: #03c75a; }
 const API = 'https://undeposable-inarguably-renna.ngrok-free.dev';
 let bulkResults = [];
 let stopFlag = false;
+let morphemeCache = {}; // 형태소 분해 캐시
 
 // API 키 저장/불러오기
 function saveApiKey() {
@@ -148,21 +149,52 @@ function getApiKey() {
   return localStorage.getItem('anthropic_api_key') || '';
 }
 
+// 페이지 로드 시 API 키 복원
 window.addEventListener('DOMContentLoaded', () => {
   const key = getApiKey();
   if (key) document.getElementById('apiKeyInput').value = key;
 });
 
-function parseRequiredKw(kwStr) {
-  return kwStr.trim().split(/\s+/).filter(w => w.length >= 2);
-}
+// AI로 필수키워드 형태소 분해
+async function getMorphemes(keywords) {
+  if (!keywords.length) return [];
+  const cacheKey = keywords.join(',');
+  if (morphemeCache[cacheKey]) return morphemeCache[cacheKey];
 
-function copyText(text, btn) {
-  navigator.clipboard.writeText(text).then(() => {
-    const orig = btn.textContent;
-    btn.textContent = '복사됨!';
-    setTimeout(() => btn.textContent = orig, 1500);
-  });
+  const apiKey = getApiKey();
+  if (!apiKey) return keywords; // API 키 없으면 원본 그대로
+
+  try {
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': apiKey,
+        'anthropic-version': '2023-06-01',
+        'anthropic-dangerous-direct-browser-access': 'true'
+      },
+      body: JSON.stringify({
+        model: 'claude-haiku-4-5-20251001',
+        max_tokens: 150,
+        messages: [{
+          role: 'user',
+          content: `다음 키워드들을 의미있는 형태소 단위로 분해해주세요. 결과는 JSON 배열로만 출력하세요.
+예시: "작두콩차" → ["작두콩", "콩차", "작두", "차"]
+예시: "보조배터리" → ["보조배터리", "배터리", "보조"]
+키워드: ${keywords.join(', ')}
+JSON 배열만 출력 (설명 없이):`
+        }]
+      })
+    });
+    const data = await res.json();
+    const text = data.content?.[0]?.text?.trim() || '[]';
+    const clean = text.replace(/```json|```/g, '').trim();
+    const morphemes = JSON.parse(clean);
+    morphemeCache[cacheKey] = morphemes;
+    return morphemes;
+  } catch {
+    return keywords;
+  }
 }
 
 async function checkServer() {
@@ -193,8 +225,109 @@ function switchTab(tab) {
   document.getElementById('tabBulk').classList.toggle('active', tab === 'bulk');
 }
 
+// 필수키워드의 2글자 이상 부분 문자열 생성
+function getKwSubstrings(kws) {
+  const subs = new Set();
+  kws.forEach(kw => {
+    const k = kw.replace(/[^\uAC00-\uD7A3a-z0-9]/g, '');
+    for (let i = 0; i < k.length; i++) {
+      for (let j = i + 2; j <= k.length; j++) {
+        subs.add(k.slice(i, j));
+      }
+    }
+  });
+  return [...subs].sort((a, b) => b.length - a.length); // 긴 것부터
+}
+
+// 단어에서 필수키워드 부분 제거 후 나머지 반환
+function removeKwFromWord(word, kwSubs) {
+  let w = word.replace(/[^\uAC00-\uD7A3a-z0-9.]/g, '');
+  for (const sub of kwSubs) {
+    if (w.includes(sub)) {
+      w = w.split(sub).join('');
+    }
+  }
+  return w.trim();
+}
+
 function parseRequiredKw(kwStr) {
   return kwStr.trim().split(/\s+/).filter(w => w.length >= 2);
+}
+
+// 겹침 체크 - 상품명 + 필수키워드 기준
+function makeBaseWords(productName, requiredKws) {
+  const allText = [productName, ...requiredKws].join(' ');
+  return allText.toLowerCase().replace(/[^\uAC00-\uD7A3a-z0-9.\s]/g, '').split(/\s+/).filter(w => w.length >= 2);
+}
+
+function isOverlap(word, baseWords) {
+  const wl = word.toLowerCase().replace(/[^\uAC00-\uD7A3a-z0-9.]/g, '');
+  if (wl.length < 2) return true;
+  const numOnly = wl.replace(/[^0-9]/g, '');
+  if (numOnly.length > 0 && baseWords.some(nw => nw.replace(/[^0-9]/g, '') === numOnly)) return true;
+  return baseWords.some(nw => nw.includes(wl) || wl.includes(nw));
+}
+
+function extractNewWords(values, baseWords, morphemes) {
+  const result = [];
+  values.forEach(val => {
+    val.split(/[,\/\s]+/).map(v => v.trim()).filter(v => v.length >= 2).forEach(v => {
+      const vClean = v.replace(/[^\uAC00-\uD7A3a-zA-Z0-9.]/g,'');
+      if (vClean.length < 2) return;
+
+      // 형태소 단위로 제거 후 나머지 추출
+      let remaining = vClean;
+      for (const m of morphemes) {
+        const mClean = m.replace(/[^\uAC00-\uD7A3a-zA-Z0-9]/g,'');
+        if (mClean.length >= 2 && remaining.includes(mClean)) {
+          remaining = remaining.split(mClean).join('');
+        }
+      }
+      remaining = remaining.trim();
+
+      // 나머지 2글자 미만이면 버림
+      if (remaining.length < 2) return;
+      // 상품명+필수키워드와 겹치면 버림
+      if (isOverlap(remaining, baseWords)) return;
+      if (!result.includes(remaining)) result.push(remaining);
+    });
+  });
+  return result;
+}
+
+async function makeCompleted(productName, attributes, tags, requiredKws) {
+  const baseWords = makeBaseWords(productName, requiredKws);
+
+  // 상품명에서 필수키워드와 겹치는 단어 제거
+  let cleanName = productName;
+  // 괄호 제거 (내용은 유지)
+  cleanName = cleanName.replace(/\(([^)]+)\)/g, ' $1').replace(/\s+/g, ' ').trim();
+  if (requiredKws.length > 0) {
+    const nameTokens = cleanName.split(/\s+/);
+    const filteredTokens = nameTokens.filter(token => {
+      const t = token.toLowerCase().replace(/[^\uAC00-\uD7A3a-z0-9.]/g, '');
+      if (t.length < 2) return true;
+      return !requiredKws.some(kw => {
+        const k = kw.toLowerCase().replace(/[^\uAC00-\uD7A3a-z0-9.]/g, '');
+        return t.includes(k) || k.includes(t);
+      });
+    });
+    cleanName = filteredTokens.join(' ').replace(/\s+/g, ' ').trim();
+  }
+
+  // AI로 형태소 분해
+  const morphemes = await getMorphemes(requiredKws);
+
+  const cleanNameWords = cleanName.toLowerCase().replace(/[^\uAC00-\uD7A3a-z0-9.\s]/g, '').split(/\s+/).filter(w => w.length >= 2);
+  const allBaseWords = [...baseWords, ...cleanNameWords];
+
+  const attrWords = extractNewWords(Object.values(attributes), allBaseWords, morphemes);
+  const tagWords = extractNewWords(tags, [...allBaseWords, ...attrWords], morphemes);
+
+  const c1 = [cleanName, ...attrWords].join(' ').trim();
+  const c2 = [cleanName, ...tagWords].join(' ').trim();
+  const c3 = [cleanName, ...attrWords, ...tagWords].join(' ').trim();
+  return { c1, c2, c3 };
 }
 
 function copyText(text, btn) {
