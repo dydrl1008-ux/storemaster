@@ -182,6 +182,8 @@ function removeKwFromWord(word, kwSubs) {
   }
   return w.trim();
 }
+
+function parseRequiredKw(kwStr) {
   return kwStr.trim().split(/\s+/).filter(w => w.length >= 2);
 }
 
