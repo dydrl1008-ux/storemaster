@@ -15,23 +15,20 @@ body { font-family: -apple-system, 'Pretendard', sans-serif; background: #f7f8fa
 .server-status.ok { border-color: #c5e8d5; background: #f0faf5; color: #018d4c; }
 .server-status.err { border-color: #fcc; background: #fff5f5; color: #c0392b; }
 .dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
-
 .tabs { display: flex; gap: 4px; margin-bottom: 1rem; }
 .tab { padding: 7px 16px; border-radius: 8px; border: 1px solid #ddd; background: #f8f8f8; font-size: 13px; cursor: pointer; color: #666; }
 .tab.active { background: #03c75a; color: #fff; border-color: #03c75a; }
-
-/* 단일 */
 .input-row { display: flex; gap: 8px; margin-bottom: 8px; }
 .input-row input { flex: 1; padding: 10px 14px; border: 1.5px solid #ddd; border-radius: 10px; font-size: 14px; outline: none; }
 .input-row input:focus { border-color: #03c75a; }
+.input-row input.required { border-color: #03c75a; }
 .btn-green { padding: 10px 20px; background: #03c75a; color: #fff; border: none; border-radius: 10px; font-size: 14px; font-weight: 700; cursor: pointer; white-space: nowrap; }
 .btn-green:disabled { background: #bbb; cursor: not-allowed; }
 .btn-gray { padding: 10px 16px; background: #f0f0f0; color: #555; border: none; border-radius: 10px; font-size: 13px; font-weight: 600; cursor: pointer; }
-
 .card { background: #fff; border-radius: 14px; border: 1px solid #ebebeb; padding: 1.25rem; margin-bottom: 12px; }
 .card-label { font-size: 11px; font-weight: 700; color: #aaa; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 8px; display: flex; align-items: center; }
 .copy-btn { margin-left: auto; font-size: 11px; padding: 3px 9px; border-radius: 5px; border: 1px solid #ddd; background: #f8f8f8; color: #666; cursor: pointer; }
-.prod-name { font-size: 15px; font-weight: 700; margin-bottom: 4px; }
+.prod-name { font-size: 15px; font-weight: 700; }
 .tag-wrap { display: flex; flex-wrap: wrap; gap: 6px; }
 .tag { font-size: 12px; padding: 4px 10px; border-radius: 20px; background: #f0faf5; color: #018d4c; border: 1px solid #c5e8d5; font-weight: 500; }
 .attr-row { display: flex; font-size: 13px; padding: 6px 0; border-bottom: 1px solid #f2f2f2; }
@@ -39,8 +36,9 @@ body { font-family: -apple-system, 'Pretendard', sans-serif; background: #f7f8fa
 .attr-key { color: #999; width: 120px; flex-shrink: 0; }
 .attr-val { font-weight: 600; }
 .completed { font-size: 14px; font-weight: 600; line-height: 1.5; word-break: break-all; }
-
-/* 대량 */
+.badge-1 { color: #018d4c; }
+.badge-2 { color: #1a73e8; }
+.badge-3 { color: #9c27b0; }
 .file-area { border: 2px dashed #ddd; border-radius: 10px; padding: 1.5rem; text-align: center; cursor: pointer; margin-bottom: 10px; }
 .file-area:hover { border-color: #03c75a; background: #f0faf5; }
 .file-area input { display: none; }
@@ -56,10 +54,7 @@ textarea:focus { border-color: #03c75a; }
 .result-list { max-height: 400px; overflow-y: auto; }
 .result-item { background: #fff; border: 1px solid #ebebeb; border-radius: 10px; padding: 12px; margin-bottom: 8px; }
 .ri-name { font-size: 13px; font-weight: 700; margin-bottom: 3px; }
-.ri-query { font-size: 11px; color: #aaa; margin-bottom: 6px; }
-.ri-tags { display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 5px; }
-.ri-tag { font-size: 11px; padding: 2px 8px; border-radius: 10px; background: #f0faf5; color: #018d4c; border: 1px solid #c5e8d5; }
-.ri-comp { font-size: 12px; color: #333; font-weight: 600; margin-top: 4px; }
+.ri-comp { font-size: 12px; font-weight: 600; margin-top: 4px; }
 .ri-err { font-size: 11px; color: #c0392b; margin-top: 4px; }
 .sbadge { display: inline-block; font-size: 10px; padding: 1px 7px; border-radius: 3px; margin-left: 6px; }
 .b-ok { background: #f0faf5; color: #018d4c; }
@@ -67,10 +62,12 @@ textarea:focus { border-color: #03c75a; }
 .b-nf { background: #fff8f0; color: #c67c00; }
 .b-mis { background: #f0f0ff; color: #5050cc; }
 .b-na { background: #f5f5f5; color: #888; }
-
 .error-box { background: #fff5f5; border: 1px solid #fcc; border-radius: 10px; padding: 12px; font-size: 13px; color: #c0392b; margin-bottom: 12px; }
 .loading { text-align: center; padding: 1.5rem; font-size: 13px; color: #aaa; }
 .empty { font-size: 13px; color: #bbb; text-align: center; padding: 20px; }
+.required-kw { background: #fff; border: 1.5px solid #ddd; border-radius: 10px; padding: 10px 14px; font-size: 13px; width: 100%; margin-bottom: 8px; outline: none; }
+.required-kw:focus { border-color: #ff9800; }
+.kw-label { font-size: 11px; color: #ff9800; font-weight: 700; margin-bottom: 4px; }
 </style>
 </head>
 <body>
@@ -79,8 +76,7 @@ textarea:focus { border-color: #03c75a; }
     <h1>상품 태그·속성 추출기</h1>
     <p>네이버 쇼핑 상품의 태그와 속성을 자동으로 추출합니다</p>
     <div class="server-status" id="serverStatus">
-      <div class="dot"></div>
-      <span>서버 확인 중...</span>
+      <div class="dot"></div><span>서버 확인 중...</span>
     </div>
   </div>
 
@@ -98,6 +94,8 @@ textarea:focus { border-color: #03c75a; }
       <input type="text" id="nvmidInput" placeholder="nvmid (선택)" />
       <button class="btn-green" id="searchBtn" onclick="searchSingle()">검색</button>
     </div>
+    <div class="kw-label">⚡ 필수키워드 (상품명·속성·태그에서 제거할 단어, 스페이스로 구분)</div>
+    <input type="text" class="required-kw" id="requiredKw" placeholder="예: 보조배터리 급속충전 (빈칸이면 제거 안 함)" />
     <div id="errorBox" class="error-box" style="display:none;"></div>
     <div id="singleLoading" class="loading" style="display:none;">검색 중...</div>
     <div id="singleResult"></div>
@@ -105,6 +103,8 @@ textarea:focus { border-color: #03c75a; }
 
   <!-- 대량 -->
   <div id="bulkTab" style="display:none;">
+    <div class="kw-label">⚡ 필수키워드 (상품명·속성·태그에서 제거할 단어, 스페이스로 구분)</div>
+    <input type="text" class="required-kw" id="bulkRequiredKw" placeholder="예: 보조배터리 급속충전 (빈칸이면 제거 안 함)" />
     <label class="file-area" id="fileArea">
       <input type="file" id="csvFile" accept=".csv,.txt" onchange="handleFile(event)" />
       <p>📂 CSV 파일 업로드 (A열: 상품명, B열: nvmid)</p>
@@ -130,14 +130,10 @@ const API = 'https://undeposable-inarguably-renna.ngrok-free.dev';
 let bulkResults = [];
 let stopFlag = false;
 
-// 서버 상태 확인
 async function checkServer() {
   const el = document.getElementById('serverStatus');
   try {
-    const res = await fetch(API + '/health', { 
-      signal: AbortSignal.timeout(3000),
-      headers: { 'ngrok-skip-browser-warning': 'true' }
-    });
+    const res = await fetch(API + '/health', { signal: AbortSignal.timeout(3000), headers: { 'ngrok-skip-browser-warning': 'true' } });
     const data = await res.json();
     if (data.status === 'ok') {
       el.className = 'server-status ok';
@@ -159,33 +155,58 @@ function switchTab(tab) {
   document.getElementById('tabBulk').classList.toggle('active', tab === 'bulk');
 }
 
-function makeCompleted(productName, attributes) {
-  const nameNorm = productName.toLowerCase().replace(/[^\uAC00-\uD7A3a-z0-9.\s]/g, '');
-  const nameWords = nameNorm.split(/\s+/).filter(w => w.length >= 2);
+// 필수키워드 파싱
+function parseRequiredKw(kwStr) {
+  return kwStr.trim().split(/\s+/).filter(w => w.length >= 2);
+}
 
-  const isOverlap = (word) => {
-    const wl = word.toLowerCase().replace(/[^\uAC00-\uD7A3a-z0-9.]/g, '');
-    if (wl.length < 2) return true;
-    // 숫자+단위 패턴 비교 (0.4L vs 04L 등 - 숫자만 비교)
-    const numOnly = wl.replace(/[^0-9]/g, '');
-    if (numOnly.length > 0) {
-      if (nameWords.some(nw => nw.replace(/[^0-9]/g, '') === numOnly && numOnly.length > 0)) return true;
-    }
-    return nameWords.some(nw => nw.includes(wl) || wl.includes(nw));
-  };
+// 겹침 체크 - 상품명 + 필수키워드 기준
+function makeBaseWords(productName, requiredKws) {
+  const allText = [productName, ...requiredKws].join(' ');
+  return allText.toLowerCase().replace(/[^\uAC00-\uD7A3a-z0-9.\s]/g, '').split(/\s+/).filter(w => w.length >= 2);
+}
 
-  const attrWords = [];
-  Object.values(attributes).forEach(val => {
+function isOverlap(word, baseWords) {
+  const wl = word.toLowerCase().replace(/[^\uAC00-\uD7A3a-z0-9.]/g, '');
+  if (wl.length < 2) return true;
+  const numOnly = wl.replace(/[^0-9]/g, '');
+  if (numOnly.length > 0 && baseWords.some(nw => nw.replace(/[^0-9]/g, '') === numOnly)) return true;
+  return baseWords.some(nw => nw.includes(wl) || wl.includes(nw));
+}
+
+function extractNewWords(values, baseWords) {
+  const result = [];
+  values.forEach(val => {
     val.split(/[,\/\s]+/).map(v => v.replace(/[^\uAC00-\uD7A3a-zA-Z0-9.]/g,'').trim()).filter(v => v.length >= 2).forEach(v => {
-      if (!isOverlap(v) && !attrWords.includes(v)) attrWords.push(v);
+      if (!isOverlap(v, baseWords) && !result.includes(v)) result.push(v);
     });
   });
-  return [productName, ...attrWords].join(' ').trim();
+  return result;
+}
+
+function makeCompleted(productName, attributes, tags, requiredKws) {
+  const baseWords = makeBaseWords(productName, requiredKws);
+  const attrWords = extractNewWords(Object.values(attributes), baseWords);
+  const tagWords = extractNewWords(tags, [...baseWords, ...attrWords]);
+
+  const c1 = [productName, ...attrWords].join(' ').trim();
+  const c2 = [productName, ...tagWords].join(' ').trim();
+  const c3 = [productName, ...attrWords, ...tagWords].join(' ').trim();
+  return { c1, c2, c3 };
+}
+
+function copyText(text, btn) {
+  navigator.clipboard.writeText(text).then(() => {
+    const orig = btn.textContent;
+    btn.textContent = '복사됨!';
+    setTimeout(() => btn.textContent = orig, 1500);
+  });
 }
 
 async function searchSingle() {
   const query = document.getElementById('queryInput').value.trim();
   const nvmid = document.getElementById('nvmidInput').value.trim();
+  const kwStr = document.getElementById('requiredKw').value;
   if (!query) return;
 
   const btn = document.getElementById('searchBtn');
@@ -199,7 +220,7 @@ async function searchSingle() {
     if (nvmid) params.append('nvmid', nvmid);
     const res = await fetch(`${API}/search?${params}`, { headers: { 'ngrok-skip-browser-warning': 'true' } });
     const d = await res.json();
-    renderSingle(d, query);
+    renderSingle(d, parseRequiredKw(kwStr));
   } catch (e) {
     document.getElementById('errorBox').style.display = 'block';
     document.getElementById('errorBox').textContent = '서버 연결 실패 — 서버실행.bat을 실행해주세요';
@@ -209,64 +230,56 @@ async function searchSingle() {
   }
 }
 
-function renderSingle(d, query) {
+function renderSingle(d, requiredKws) {
   const r = document.getElementById('singleResult');
   if (d.status === 'notFound') { r.innerHTML = '<div class="empty">상품을 찾을 수 없습니다</div>'; return; }
-  if (d.status === 'nvmidMismatch') { r.innerHTML = '<div class="empty" style="color:#5050cc">nvmid 불일치</div>'; return; }
-  if (d.status === 'noAttributes') {
-    r.innerHTML = `<div class="card"><div class="prod-name">${d.productName || '-'}</div><div style="font-size:12px;color:#888;margin-top:6px;">✓ nvmid 일치 — 속성 없는 상품</div></div>`;
-    return;
-  }
+  if (d.status === 'nvmidMismatch') { r.innerHTML = `<div class="empty" style="color:#5050cc">nvmid 불일치<br><small style="color:#aaa">${d.error||''}</small></div>`; return; }
+  if (d.status === 'noAttributes') { r.innerHTML = `<div class="card"><div class="prod-name">${d.productName||'-'}</div><div style="font-size:12px;color:#888;margin-top:6px;">✓ nvmid 일치 — 속성 없는 상품</div></div>`; return; }
   if (d.status === 'error') { r.innerHTML = `<div class="empty">오류: ${d.error}</div>`; return; }
 
-  const completed1 = makeCompleted(d.productName || '', d.attributes || {});
-  const completed2 = completed1 + (d.tags?.length ? ' ' + d.tags.join(' ') : '');
+  const { c1, c2, c3 } = makeCompleted(d.productName||'', d.attributes||{}, d.tags||[], requiredKws);
 
-  let html = `<div class="card"><div class="prod-name">${d.productName || '-'}</div></div>`;
+  let html = `<div class="card"><div class="prod-name">${d.productName||'-'}</div></div>`;
 
-  if (Object.keys(d.attributes || {}).length) {
+  if (Object.keys(d.attributes||{}).length) {
     html += `<div class="card"><div class="card-label">속성</div>
-      ${Object.entries(d.attributes).map(([k,v]) => `<div class="attr-row"><span class="attr-key">${k}</span><span class="attr-val">${v}</span></div>`).join('')}
+      ${Object.entries(d.attributes).map(([k,v])=>`<div class="attr-row"><span class="attr-key">${k}</span><span class="attr-val">${v}</span></div>`).join('')}
     </div>`;
   }
 
   if (d.tags?.length) {
+    const tagStr = d.tags.join(' ');
     html += `<div class="card">
-      <div class="card-label">태그 <button class="copy-btn" onclick="copyText('${d.tags.join(' ')}', this)">복사</button></div>
-      <div class="tag-wrap">${d.tags.map(t => `<span class="tag">#${t}</span>`).join('')}</div>
+      <div class="card-label">태그 <button class="copy-btn" onclick="copyText('${tagStr}',this)">복사</button></div>
+      <div class="tag-wrap">${d.tags.map(t=>`<span class="tag">#${t}</span>`).join('')}</div>
     </div>`;
   }
 
-  html += `<div class="card">
-    <div class="card-label">완성 상품명 1차 <button class="copy-btn" onclick="copyText(\`${completed1}\`, this)">복사</button></div>
-    <div class="completed">${completed1}</div>
-  </div>`;
-
-  html += `<div class="card">
-    <div class="card-label">완성 상품명 2차 (태그포함) <button class="copy-btn" onclick="copyText(\`${completed2}\`, this)">복사</button></div>
-    <div class="completed">${completed2}</div>
-  </div>`;
+  html += `
+    <div class="card">
+      <div class="card-label badge-1">완성 상품명 1차 (속성) <button class="copy-btn" onclick="copyText(this.closest('.card').querySelector('.completed').textContent,this)">복사</button></div>
+      <div class="completed">${c1}</div>
+    </div>
+    <div class="card">
+      <div class="card-label badge-2">완성 상품명 2차 (태그) <button class="copy-btn" onclick="copyText(this.closest('.card').querySelector('.completed').textContent,this)">복사</button></div>
+      <div class="completed">${c2}</div>
+    </div>
+    <div class="card">
+      <div class="card-label badge-3">완성 상품명 3차 (속성+태그) <button class="copy-btn" onclick="copyText(this.closest('.card').querySelector('.completed').textContent,this)">복사</button></div>
+      <div class="completed">${c3}</div>
+    </div>`;
 
   r.innerHTML = html;
 }
 
-function copyText(text, btn) {
-  navigator.clipboard.writeText(text).then(() => {
-    const orig = btn.textContent;
-    btn.textContent = '복사됨!';
-    setTimeout(() => btn.textContent = orig, 1500);
-  });
-}
-
-// 파일 업로드
 function handleFile(e) {
   const file = e.target.files[0];
   if (!file) return;
   const reader = new FileReader();
   reader.onload = (ev) => {
     const lines = ev.target.result.split(/\r?\n/).filter(Boolean);
-    const rows = lines.map(l => l.split(',').map(c => c.replace(/^"|"$/g,'').trim())).filter(cols => cols[0] && cols[0] !== '상품명');
-    document.getElementById('bulkInput').value = rows.map(cols => cols[1] ? `${cols[0]}|${cols[1]}` : cols[0]).join('\n');
+    const rows = lines.map(l=>l.split(',').map(c=>c.replace(/^"|"$/g,'').trim())).filter(cols=>cols[0]&&cols[0]!=='상품명');
+    document.getElementById('bulkInput').value = rows.map(cols=>cols[1]?`${cols[0]}|${cols[1]}`:cols[0]).join('\n');
   };
   reader.readAsText(file, 'UTF-8');
 }
@@ -275,7 +288,9 @@ let bulkTotal = 0;
 async function startBulk() {
   const raw = document.getElementById('bulkInput').value.trim();
   if (!raw) return;
-  const lines = raw.split('\n').map(s => s.trim()).filter(Boolean);
+  const kwStr = document.getElementById('bulkRequiredKw').value;
+  const requiredKws = parseRequiredKw(kwStr);
+  const lines = raw.split('\n').map(s=>s.trim()).filter(Boolean);
   const items = lines.map(line => {
     const parts = line.split('|');
     return parts.length >= 2 ? { query: parts[0].trim(), nvmid: parts[1].trim() } : { query: line, nvmid: '' };
@@ -299,9 +314,9 @@ async function startBulk() {
       if (item.nvmid) params.append('nvmid', item.nvmid);
       const res = await fetch(`${API}/search?${params}`, { headers: { 'ngrok-skip-browser-warning': 'true' } });
       const d = await res.json();
-      bulkResults.push({ query: item.query, nvmid: item.nvmid, ...d });
+      bulkResults.push({ query: item.query, nvmid: item.nvmid, requiredKws, ...d });
     } catch {
-      bulkResults.push({ query: item.query, nvmid: item.nvmid, status: 'error', error: '서버 연결 실패' });
+      bulkResults.push({ query: item.query, nvmid: item.nvmid, requiredKws, status: 'error', error: '서버 연결 실패' });
     }
     setProgress(i + 1, items.length);
     renderBulk();
@@ -329,18 +344,16 @@ function setProgress(done, total) {
 function renderBulk() {
   document.getElementById('bulkResult').innerHTML = bulkResults.map(d => {
     const badge = d.status === 'success' ? '<span class="sbadge b-ok">완료</span>'
-      : d.status === 'nvmidMismatch' ? '<span class="sbadge b-mis">nvmid불일치</span>'
       : d.status === 'noAttributes' ? '<span class="sbadge b-na">속성없음</span>'
+      : d.status === 'nvmidMismatch' ? '<span class="sbadge b-mis">nvmid불일치</span>'
       : d.status === 'notFound' ? '<span class="sbadge b-nf">미발견</span>'
       : '<span class="sbadge b-err">오류</span>';
-    const tags = (d.tags || []).slice(0, 5).map(t => `<span class="ri-tag">#${t}</span>`).join('');
-    const completed1 = d.status === 'success' ? makeCompleted(d.productName || '', d.attributes || {}) : '';
-    const failReason = d.status !== 'success' ? `<div class="ri-err">${d.error || d.status}</div>` : '';
+    const kws = d.requiredKws || [];
+    const { c1 } = d.status === 'success' ? makeCompleted(d.productName||'', d.attributes||{}, d.tags||[], kws) : { c1: '' };
+    const failReason = d.status !== 'success' ? `<div class="ri-err">${d.error||d.status}</div>` : '';
     return `<div class="result-item">
-      <div class="ri-name">${d.productName || d.query}${badge}</div>
-      <div class="ri-query">${d.nvmid ? `nvmid: ${d.nvmid} | ` : ''}${d.query}</div>
-      ${tags ? `<div class="ri-tags">${tags}</div>` : ''}
-      ${completed1 ? `<div class="ri-comp">→ ${completed1}</div>` : ''}
+      <div class="ri-name">${d.productName||d.query}${badge}</div>
+      ${c1 ? `<div class="ri-comp" style="color:#018d4c">1차: ${c1}</div>` : ''}
       ${failReason}
     </div>`;
   }).join('');
@@ -348,15 +361,18 @@ function renderBulk() {
 
 function exportCSV() {
   if (!bulkResults.length) return;
-  const headers = ['검색어', 'nvmid', '상품명', '태그', '속성', '완성상품명1차', '완성상품명2차(태그포함)', '실패사유'];
+  const headers = ['검색어','nvmid','상품명','태그','속성','완성상품명1차(속성)','완성상품명2차(태그)','완성상품명3차(속성+태그)','실패사유'];
   const rows = bulkResults.map(d => {
-    const attrs = Object.entries(d.attributes || {}).map(([k,v]) => `${k}: ${v}`).join(' / ');
-    const c1 = d.status === 'success' ? makeCompleted(d.productName || '', d.attributes || {}) : '';
-    const c2 = c1 + (d.tags?.length ? ' ' + d.tags.join(' ') : '');
-    const fail = d.status === 'nvmidMismatch' ? 'nvmid 불일치' : d.status === 'noAttributes' ? '속성없는상품(nvmid일치)' : d.status === 'notFound' ? '미발견' : d.status === 'error' ? (d.error || '오류') : '';
-    return [d.query||'', d.nvmid||'', d.productName||'', (d.tags||[]).join(' '), attrs, c1, c2, fail];
+    const kws = d.requiredKws || [];
+    const attrs = Object.entries(d.attributes||{}).map(([k,v])=>`${k}: ${v}`).join(' / ');
+    const { c1, c2, c3 } = d.status === 'success' ? makeCompleted(d.productName||'', d.attributes||{}, d.tags||[], kws) : { c1:'', c2:'', c3:'' };
+    const fail = d.status === 'nvmidMismatch' ? 'nvmid 불일치'
+      : d.status === 'noAttributes' ? '속성없는상품(nvmid일치)'
+      : d.status === 'notFound' ? '미발견'
+      : d.status === 'error' ? (d.error||'오류') : '';
+    return [d.query||'', d.nvmid||'', d.productName||'', (d.tags||[]).join(' '), attrs, c1, c2, c3, fail];
   });
-  const csv = [headers, ...rows].map(r => r.map(c => `"${String(c).replace(/"/g,'""')}"`).join(',')).join('\n');
+  const csv = [headers,...rows].map(r=>r.map(c=>`"${String(c).replace(/"/g,'""')}"`).join(',')).join('\n');
   const a = document.createElement('a');
   a.href = URL.createObjectURL(new Blob(['\uFEFF'+csv], {type:'text/csv;charset=utf-8;'}));
   a.download = `태그추출_${new Date().toLocaleDateString('ko-KR').replace(/\.\s*/g,'-').slice(0,-1)}.csv`;
