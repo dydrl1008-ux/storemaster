@@ -189,6 +189,8 @@ function makeCompleted(productName, attributes, tags, requiredKws) {
 
   // 상품명에서 필수키워드와 겹치는 단어 제거
   let cleanName = productName;
+  // 괄호 제거 (내용은 유지)
+  cleanName = cleanName.replace(/\(([^)]+)\)/g, ' $1').replace(/\s+/g, ' ').trim();
   if (requiredKws.length > 0) {
     const nameTokens = productName.split(/\s+/);
     const filteredTokens = nameTokens.filter(token => {
