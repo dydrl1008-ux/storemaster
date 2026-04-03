@@ -155,8 +155,30 @@ function switchTab(tab) {
   document.getElementById('tabBulk').classList.toggle('active', tab === 'bulk');
 }
 
-// 필수키워드 파싱
-function parseRequiredKw(kwStr) {
+// 필수키워드의 2글자 이상 부분 문자열 생성
+function getKwSubstrings(kws) {
+  const subs = new Set();
+  kws.forEach(kw => {
+    const k = kw.replace(/[^\uAC00-\uD7A3a-z0-9]/g, '');
+    for (let i = 0; i < k.length; i++) {
+      for (let j = i + 2; j <= k.length; j++) {
+        subs.add(k.slice(i, j));
+      }
+    }
+  });
+  return [...subs].sort((a, b) => b.length - a.length); // 긴 것부터
+}
+
+// 단어에서 필수키워드 부분 제거 후 나머지 반환
+function removeKwFromWord(word, kwSubs) {
+  let w = word.replace(/[^\uAC00-\uD7A3a-z0-9.]/g, '');
+  for (const sub of kwSubs) {
+    if (w.includes(sub)) {
+      w = w.split(sub).join('');
+    }
+  }
+  return w.trim();
+}
   return kwStr.trim().split(/\s+/).filter(w => w.length >= 2);
 }
 
@@ -174,11 +196,20 @@ function isOverlap(word, baseWords) {
   return baseWords.some(nw => nw.includes(wl) || wl.includes(nw));
 }
 
-function extractNewWords(values, baseWords) {
+function extractNewWords(values, baseWords, requiredKws) {
+  const kwSubs = getKwSubstrings(requiredKws);
   const result = [];
   values.forEach(val => {
-    val.split(/[,\/\s]+/).map(v => v.replace(/[^\uAC00-\uD7A3a-zA-Z0-9.]/g,'').trim()).filter(v => v.length >= 2).forEach(v => {
-      if (!isOverlap(v, baseWords) && !result.includes(v)) result.push(v);
+    val.split(/[,\/\s]+/).map(v => v.trim()).filter(v => v.length >= 2).forEach(v => {
+      const vClean = v.replace(/[^\uAC00-\uD7A3a-zA-Z0-9.]/g,'');
+      if (vClean.length < 2) return;
+      // 필수키워드 부분 제거 후 나머지
+      let remaining = kwSubs.length > 0 ? removeKwFromWord(vClean, kwSubs) : vClean;
+      // 나머지 2글자 미만이면 버림
+      if (remaining.length < 2) return;
+      // 상품명+필수키워드와 겹치면 버림
+      if (isOverlap(remaining, baseWords)) return;
+      if (!result.includes(remaining)) result.push(remaining);
     });
   });
   return result;
@@ -189,6 +220,8 @@ function makeCompleted(productName, attributes, tags, requiredKws) {
 
   // 상품명에서 필수키워드와 겹치는 단어 제거
   let cleanName = productName;
+  // 괄호 제거 (내용은 유지)
+  cleanName = cleanName.replace(/\(([^)]+)\)/g, ' $1').replace(/\s+/g, ' ').trim();
   if (requiredKws.length > 0) {
     const nameTokens = productName.split(/\s+/);
     const filteredTokens = nameTokens.filter(token => {
@@ -205,8 +238,8 @@ function makeCompleted(productName, attributes, tags, requiredKws) {
   const cleanNameWords = cleanName.toLowerCase().replace(/[^\uAC00-\uD7A3a-z0-9.\s]/g, '').split(/\s+/).filter(w => w.length >= 2);
   const allBaseWords = [...baseWords, ...cleanNameWords];
 
-  const attrWords = extractNewWords(Object.values(attributes), allBaseWords);
-  const tagWords = extractNewWords(tags, [...allBaseWords, ...attrWords]);
+  const attrWords = extractNewWords(Object.values(attributes), allBaseWords, requiredKws);
+  const tagWords = extractNewWords(tags, [...allBaseWords, ...attrWords], requiredKws);
 
   const c1 = [cleanName, ...attrWords].join(' ').trim();
   const c2 = [cleanName, ...tagWords].join(' ').trim();
@@ -256,7 +289,7 @@ function renderSingle(d, requiredKws) {
   if (d.status === 'noAttributes') { r.innerHTML = `<div class="card"><div class="prod-name">${d.productName||'-'}</div><div style="font-size:12px;color:#888;margin-top:6px;">✓ nvmid 일치 — 속성 없는 상품</div></div>`; return; }
   if (d.status === 'error') { r.innerHTML = `<div class="empty">오류: ${d.error}</div>`; return; }
 
-  const { c1, c2, c3 } = makeCompleted(d.productName||'', d.attributes||{}, d.tags||[], requiredKws);
+  const { c1, c2, c3 } = makeCompleted(d.productName||'', d.attributes||{}, d.tags||[], [...requiredKws, ...(d.brandNames||[])]);
 
   let html = `<div class="card"><div class="prod-name">${d.productName||'-'}</div></div>`;
 
@@ -367,7 +400,7 @@ function renderBulk() {
       : d.status === 'nvmidMismatch' ? '<span class="sbadge b-mis">nvmid불일치</span>'
       : d.status === 'notFound' ? '<span class="sbadge b-nf">미발견</span>'
       : '<span class="sbadge b-err">오류</span>';
-    const kws = d.requiredKws || [];
+    const kws = [...(d.requiredKws || []), ...(d.brandNames || [])];
     const { c1 } = d.status === 'success' ? makeCompleted(d.productName||'', d.attributes||{}, d.tags||[], kws) : { c1: '' };
     const failReason = d.status !== 'success' ? `<div class="ri-err">${d.error||d.status}</div>` : '';
     return `<div class="result-item">
@@ -382,7 +415,7 @@ function exportCSV() {
   if (!bulkResults.length) return;
   const headers = ['검색어','nvmid','상품명','태그','속성','완성상품명1차(속성)','완성상품명2차(태그)','완성상품명3차(속성+태그)','실패사유'];
   const rows = bulkResults.map(d => {
-    const kws = d.requiredKws || [];
+    const kws = [...(d.requiredKws || []), ...(d.brandNames || [])];
     const attrs = Object.entries(d.attributes||{}).map(([k,v])=>`${k}: ${v}`).join(' / ');
     const { c1, c2, c3 } = d.status === 'success' ? makeCompleted(d.productName||'', d.attributes||{}, d.tags||[], kws) : { c1:'', c2:'', c3:'' };
     const fail = d.status === 'nvmidMismatch' ? 'nvmid 불일치'
