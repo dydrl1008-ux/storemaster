@@ -175,7 +175,7 @@ async function getMorphemes(keywords) {
       },
       body: JSON.stringify({
         model: 'claude-haiku-4-5-20251001',
-        max_tokens: 200,
+        max_tokens: 150,
         messages: [{
           role: 'user',
           content: `다음 키워드들을 의미있는 형태소 단위로 분해해주세요. 결과는 JSON 배열로만 출력하세요.
@@ -350,12 +350,18 @@ async function searchSingle() {
   document.getElementById('singleLoading').style.display = 'block';
   document.getElementById('singleResult').innerHTML = '';
 
+  const requiredKws = parseRequiredKw(kwStr);
+
   try {
     const params = new URLSearchParams({ query });
     if (nvmid) params.append('nvmid', nvmid);
+    requiredKws.forEach(k => params.append('kw', k));
+    const apiKey = getApiKey();
+    if (apiKey) params.append('apiKey', apiKey);
+
     const res = await fetch(`${API}/search?${params}`, { headers: { 'ngrok-skip-browser-warning': 'true' } });
     const d = await res.json();
-    renderSingle(d, parseRequiredKw(kwStr));
+    renderSingle(d);
   } catch (e) {
     document.getElementById('errorBox').style.display = 'block';
     document.getElementById('errorBox').textContent = '서버 연결 실패 — 서버실행.bat을 실행해주세요';
@@ -365,15 +371,14 @@ async function searchSingle() {
   }
 }
 
-async function renderSingle(d, requiredKws) {
+function renderSingle(d) {
   const r = document.getElementById('singleResult');
   if (d.status === 'notFound') { r.innerHTML = '<div class="empty">상품을 찾을 수 없습니다</div>'; return; }
   if (d.status === 'nvmidMismatch') { r.innerHTML = `<div class="empty" style="color:#5050cc">nvmid 불일치<br><small style="color:#aaa">${d.error||''}</small></div>`; return; }
   if (d.status === 'noAttributes') { r.innerHTML = `<div class="card"><div class="prod-name">${d.productName||'-'}</div><div style="font-size:12px;color:#888;margin-top:6px;">✓ nvmid 일치 — 속성 없는 상품</div></div>`; return; }
   if (d.status === 'error') { r.innerHTML = `<div class="empty">오류: ${d.error}</div>`; return; }
 
-  r.innerHTML = '<div class="loading">완성 상품명 생성 중...</div>';
-  const { c1, c2, c3 } = await makeCompleted(d.productName||'', d.attributes||{}, d.tags||[], [...requiredKws, ...(d.brandNames||[])]);
+  const c1 = d.c1 || '', c2 = d.c2 || '', c3 = d.c3 || '';
 
   let html = `<div class="card"><div class="prod-name">${d.productName||'-'}</div></div>`;
 
@@ -448,11 +453,14 @@ async function startBulk() {
     try {
       const params = new URLSearchParams({ query: item.query });
       if (item.nvmid) params.append('nvmid', item.nvmid);
+      requiredKws.forEach(k => params.append('kw', k));
+      const apiKey = getApiKey();
+      if (apiKey) params.append('apiKey', apiKey);
       const res = await fetch(`${API}/search?${params}`, { headers: { 'ngrok-skip-browser-warning': 'true' } });
       const d = await res.json();
-      bulkResults.push({ query: item.query, nvmid: item.nvmid, requiredKws, ...d });
+      bulkResults.push({ query: item.query, nvmid: item.nvmid, ...d });
     } catch {
-      bulkResults.push({ query: item.query, nvmid: item.nvmid, requiredKws, status: 'error', error: '서버 연결 실패' });
+      bulkResults.push({ query: item.query, nvmid: item.nvmid, status: 'error', error: '서버 연결 실패' });
     }
     setProgress(i + 1, items.length);
     renderBulk();
@@ -477,38 +485,33 @@ function setProgress(done, total) {
   document.getElementById('progressText').textContent = `${done} / ${total} 완료`;
 }
 
-async function renderBulk() {
-  const items = await Promise.all(bulkResults.map(async d => {
+function renderBulk() {
+  document.getElementById('bulkResult').innerHTML = bulkResults.map(d => {
     const badge = d.status === 'success' ? '<span class="sbadge b-ok">완료</span>'
       : d.status === 'noAttributes' ? '<span class="sbadge b-na">속성없음</span>'
       : d.status === 'nvmidMismatch' ? '<span class="sbadge b-mis">nvmid불일치</span>'
       : d.status === 'notFound' ? '<span class="sbadge b-nf">미발견</span>'
       : '<span class="sbadge b-err">오류</span>';
-    const kws = [...(d.requiredKws || []), ...(d.brandNames || [])];
-    const { c1 } = d.status === 'success' ? await makeCompleted(d.productName||'', d.attributes||{}, d.tags||[], kws) : { c1: '' };
     const failReason = d.status !== 'success' ? `<div class="ri-err">${d.error||d.status}</div>` : '';
     return `<div class="result-item">
       <div class="ri-name">${d.productName||d.query}${badge}</div>
-      ${c1 ? `<div class="ri-comp" style="color:#018d4c">1차: ${c1}</div>` : ''}
+      ${d.c1 ? `<div class="ri-comp" style="color:#018d4c">1차: ${d.c1}</div>` : ''}
       ${failReason}
     </div>`;
-  }));
-  document.getElementById('bulkResult').innerHTML = items.join('');
+  }).join('');
 }
 
-async function exportCSV() {
+function exportCSV() {
   if (!bulkResults.length) return;
   const headers = ['검색어','nvmid','상품명','태그','속성','완성상품명1차(속성)','완성상품명2차(태그)','완성상품명3차(속성+태그)','실패사유'];
-  const rows = await Promise.all(bulkResults.map(async d => {
-    const kws = [...(d.requiredKws || []), ...(d.brandNames || [])];
+  const rows = bulkResults.map(d => {
     const attrs = Object.entries(d.attributes||{}).map(([k,v])=>`${k}: ${v}`).join(' / ');
-    const { c1, c2, c3 } = d.status === 'success' ? await makeCompleted(d.productName||'', d.attributes||{}, d.tags||[], kws) : { c1:'', c2:'', c3:'' };
     const fail = d.status === 'nvmidMismatch' ? 'nvmid 불일치'
       : d.status === 'noAttributes' ? '속성없는상품(nvmid일치)'
       : d.status === 'notFound' ? '미발견'
       : d.status === 'error' ? (d.error||'오류') : '';
-    return [d.query||'', d.nvmid||'', d.productName||'', (d.tags||[]).join(' '), attrs, c1, c2, c3, fail];
-  }));
+    return [d.query||'', d.nvmid||'', d.productName||'', (d.tags||[]).join(' '), attrs, d.c1||'', d.c2||'', d.c3||'', fail];
+  });
   const csv = [headers,...rows].map(r=>r.map(c=>`"${String(c).replace(/"/g,'""')}"`).join(',')).join('\n');
   const a = document.createElement('a');
   a.href = URL.createObjectURL(new Blob(['\uFEFF'+csv], {type:'text/csv;charset=utf-8;'}));
