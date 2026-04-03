@@ -186,12 +186,31 @@ function extractNewWords(values, baseWords) {
 
 function makeCompleted(productName, attributes, tags, requiredKws) {
   const baseWords = makeBaseWords(productName, requiredKws);
-  const attrWords = extractNewWords(Object.values(attributes), baseWords);
-  const tagWords = extractNewWords(tags, [...baseWords, ...attrWords]);
 
-  const c1 = [productName, ...attrWords].join(' ').trim();
-  const c2 = [productName, ...tagWords].join(' ').trim();
-  const c3 = [productName, ...attrWords, ...tagWords].join(' ').trim();
+  // 상품명에서 필수키워드와 겹치는 단어 제거
+  let cleanName = productName;
+  if (requiredKws.length > 0) {
+    const nameTokens = productName.split(/\s+/);
+    const filteredTokens = nameTokens.filter(token => {
+      const t = token.toLowerCase().replace(/[^\uAC00-\uD7A3a-z0-9.]/g, '');
+      if (t.length < 2) return true;
+      return !requiredKws.some(kw => {
+        const k = kw.toLowerCase().replace(/[^\uAC00-\uD7A3a-z0-9.]/g, '');
+        return t.includes(k) || k.includes(t);
+      });
+    });
+    cleanName = filteredTokens.join(' ').replace(/\s+/g, ' ').trim();
+  }
+
+  const cleanNameWords = cleanName.toLowerCase().replace(/[^\uAC00-\uD7A3a-z0-9.\s]/g, '').split(/\s+/).filter(w => w.length >= 2);
+  const allBaseWords = [...baseWords, ...cleanNameWords];
+
+  const attrWords = extractNewWords(Object.values(attributes), allBaseWords);
+  const tagWords = extractNewWords(tags, [...allBaseWords, ...attrWords]);
+
+  const c1 = [cleanName, ...attrWords].join(' ').trim();
+  const c2 = [cleanName, ...tagWords].join(' ').trim();
+  const c3 = [cleanName, ...attrWords, ...tagWords].join(' ').trim();
   return { c1, c2, c3 };
 }
 
