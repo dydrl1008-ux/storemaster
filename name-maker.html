@@ -412,35 +412,30 @@ async function checkRanks() {
   const nameWords = generatedName.split(/\s+/).filter(w => w.length >= 2);
   if (!nameWords.includes(mainKw)) nameWords.unshift(mainKw);
 
-  // 조합 생성 (메인키워드 필수 포함)
+  // 조합 생성 함수
+  function getCombinations(arr, size) {
+    const result = [];
+    function helper(start, current) {
+      if (current.length === size) { result.push([...current]); return; }
+      for (let i = start; i < arr.length; i++) {
+        helper(i + 1, [...current, arr[i]]);
+      }
+    }
+    helper(0, []);
+    return result;
+  }
+
   const combos = new Set();
   for (const size of comboSizes) {
-    for (let i = 0; i < nameWords.length; i++) {
-      for (let j = i + 1; j < nameWords.length; j++) {
-        if (size === 2) {
-          if (nameWords[i] === mainKw || nameWords[j] === mainKw) {
-            combos.add([nameWords[i], nameWords[j]].join(' '));
-          }
-        } else if (size === 3) {
-          for (let k = j + 1; k < nameWords.length; k++) {
-            if (nameWords[i] === mainKw || nameWords[j] === mainKw || nameWords[k] === mainKw) {
-              combos.add([nameWords[i], nameWords[j], nameWords[k]].join(' '));
-            }
-          }
-        } else if (size === 4) {
-          for (let k = j + 1; k < nameWords.length; k++) {
-            for (let l = k + 1; l < nameWords.length; l++) {
-              if ([nameWords[i], nameWords[j], nameWords[k], nameWords[l]].includes(mainKw)) {
-                combos.add([nameWords[i], nameWords[j], nameWords[k], nameWords[l]].join(' '));
-              }
-            }
-          }
-        }
+    const combs = getCombinations(nameWords, size);
+    for (const comb of combs) {
+      if (comb.includes(mainKw)) {
+        combos.add(comb.join(' '));
       }
     }
   }
 
-  const comboList = [...combos].slice(0, 30); // 최대 30개
+  const comboList = [...combos]; // 전체 다 체크
   if (!comboList.length) return alert('조합을 생성할 수 없습니다');
 
   const btn = document.getElementById('rankCheckBtn');
