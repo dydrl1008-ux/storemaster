@@ -40,339 +40,94 @@ body {
 }
 
 .container { max-width: 700px; margin: 0 auto; }
-
 .header { margin-bottom: 40px; }
-
-.badge {
-  display: inline-block;
-  font-family: var(--mono);
-  font-size: 10px;
-  letter-spacing: 0.15em;
-  text-transform: uppercase;
-  color: var(--accent);
-  border: 1px solid var(--accent-border);
-  background: var(--accent-dim);
-  padding: 3px 10px;
-  border-radius: 3px;
-  margin-bottom: 16px;
-}
-
+.badge { display: inline-block; font-family: var(--mono); font-size: 10px; letter-spacing: 0.15em; text-transform: uppercase; color: var(--accent); border: 1px solid var(--accent-border); background: var(--accent-dim); padding: 3px 10px; border-radius: 3px; margin-bottom: 16px; }
 h1 { font-size: 30px; font-weight: 700; line-height: 1.2; margin-bottom: 8px; }
 h1 em { font-style: normal; color: var(--accent); }
 .sub { font-size: 14px; color: var(--text2); line-height: 1.6; }
 
-/* STEPS */
-.steps {
-  display: flex;
-  gap: 0;
-  margin-bottom: 24px;
+/* 툴 링크 */
+.tool-links { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 28px; }
+.tool-link {
+  flex: 1; min-width: 200px;
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+  padding: 14px;
+  background: var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--radius);
-  overflow: hidden;
-}
-
-.step {
-  flex: 1;
-  padding: 10px 14px;
   font-family: var(--mono);
-  font-size: 10px;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: var(--text3);
-  border-right: 1px solid var(--border);
-  display: flex;
-  align-items: center;
-  gap: 7px;
-  background: var(--surface);
+  font-size: 12px;
+  color: var(--text2);
+  text-decoration: none;
+  letter-spacing: 0.05em;
   transition: all 0.2s;
 }
+.tool-link:hover { border-color: var(--accent); color: var(--accent); background: var(--accent-dim); }
 
+.steps { display: flex; gap: 0; margin-bottom: 24px; border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }
+.step { flex: 1; padding: 10px 14px; font-family: var(--mono); font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text3); border-right: 1px solid var(--border); display: flex; align-items: center; gap: 7px; background: var(--surface); transition: all 0.2s; }
 .step:last-child { border-right: none; }
 .step.active { color: var(--accent); background: var(--accent-dim); }
 .step.done { color: var(--text2); }
+.step-num { width: 18px; height: 18px; border-radius: 50%; border: 1px solid currentColor; display: flex; align-items: center; justify-content: center; font-size: 9px; flex-shrink: 0; }
+.step.done .step-num { background: var(--text3); border-color: var(--text3); color: var(--bg); }
 
-.step-num {
-  width: 18px;
-  height: 18px;
-  border-radius: 50%;
-  border: 1px solid currentColor;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 9px;
-  flex-shrink: 0;
-}
-
-.step.done .step-num {
-  background: var(--text3);
-  border-color: var(--text3);
-  color: var(--bg);
-}
-
-/* CARD */
-.card {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  padding: 26px;
-  margin-bottom: 14px;
-}
-
-.card-title {
-  font-family: var(--mono);
-  font-size: 10px;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  color: var(--text3);
-  margin-bottom: 18px;
-  padding-bottom: 12px;
-  border-bottom: 1px solid var(--border);
-}
-
+.card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 26px; margin-bottom: 14px; }
+.card-title { font-family: var(--mono); font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--text3); margin-bottom: 18px; padding-bottom: 12px; border-bottom: 1px solid var(--border); }
 .field { margin-bottom: 18px; }
 .field:last-child { margin-bottom: 0; }
-
-label {
-  display: block;
-  font-family: var(--mono);
-  font-size: 10px;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  color: var(--text2);
-  margin-bottom: 7px;
-}
-
-input[type="text"] {
-  width: 100%;
-  background: var(--surface2);
-  border: 1px solid var(--border);
-  border-radius: 6px;
-  padding: 11px 13px;
-  font-family: var(--sans);
-  font-size: 14px;
-  color: var(--text);
-  outline: none;
-  transition: border-color 0.15s;
-}
-
+label { display: block; font-family: var(--mono); font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text2); margin-bottom: 7px; }
+input[type="text"] { width: 100%; background: var(--surface2); border: 1px solid var(--border); border-radius: 6px; padding: 11px 13px; font-family: var(--sans); font-size: 14px; color: var(--text); outline: none; transition: border-color 0.15s; }
 input[type="text"]:focus { border-color: var(--accent); }
 input[type="text"]::placeholder { color: var(--text3); }
 
-/* SLIDER */
 .slider-wrap { display: flex; align-items: center; gap: 12px; }
-
-input[type="range"] {
-  -webkit-appearance: none;
-  flex: 1;
-  height: 3px;
-  background: var(--border2);
-  border-radius: 2px;
-  outline: none;
-  cursor: pointer;
-}
-
-input[type="range"]::-webkit-slider-thumb {
-  -webkit-appearance: none;
-  width: 16px;
-  height: 16px;
-  background: var(--accent);
-  border-radius: 50%;
-  cursor: pointer;
-  transition: transform 0.1s;
-}
-
+input[type="range"] { -webkit-appearance: none; flex: 1; height: 3px; background: var(--border2); border-radius: 2px; outline: none; cursor: pointer; }
+input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; width: 16px; height: 16px; background: var(--accent); border-radius: 50%; cursor: pointer; transition: transform 0.1s; }
 input[type="range"]::-webkit-slider-thumb:hover { transform: scale(1.2); }
-
-.slider-val {
-  font-family: var(--mono);
-  font-size: 15px;
-  font-weight: 700;
-  color: var(--accent);
-  min-width: 28px;
-  text-align: right;
-}
-
+.slider-val { font-family: var(--mono); font-size: 15px; font-weight: 700; color: var(--accent); min-width: 28px; text-align: right; }
 .slider-hint { font-size: 11px; color: var(--text3); margin-top: 5px; }
 
-/* BUTTONS */
-.btn {
-  width: 100%;
-  border: none;
-  border-radius: 6px;
-  padding: 13px;
-  font-family: var(--mono);
-  font-size: 12px;
-  font-weight: 700;
-  letter-spacing: 0.05em;
-  cursor: pointer;
-  transition: opacity 0.15s, transform 0.1s;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-}
-
+.btn { width: 100%; border: none; border-radius: 6px; padding: 13px; font-family: var(--mono); font-size: 12px; font-weight: 700; letter-spacing: 0.05em; cursor: pointer; transition: opacity 0.15s, transform 0.1s; display: flex; align-items: center; justify-content: center; gap: 8px; }
 .btn-primary { background: var(--accent); color: #0d0d0d; }
 .btn-secondary { background: var(--blue-dim); color: var(--blue); border: 1px solid var(--blue-border); }
 .btn:hover { opacity: 0.85; }
 .btn:active { transform: scale(0.99); }
 .btn:disabled { opacity: 0.35; cursor: not-allowed; transform: none; }
-
-.spinner {
-  width: 13px;
-  height: 13px;
-  border: 2px solid rgba(0,0,0,0.2);
-  border-top-color: currentColor;
-  border-radius: 50%;
-  animation: spin 0.7s linear infinite;
-  display: none;
-}
-
+.spinner { width: 13px; height: 13px; border: 2px solid rgba(0,0,0,0.2); border-top-color: currentColor; border-radius: 50%; animation: spin 0.7s linear infinite; display: none; }
 .btn-secondary .spinner { border-color: rgba(74,158,255,0.2); border-top-color: var(--blue); }
 .loading .spinner { display: block; }
-
 @keyframes spin { to { transform: rotate(360deg); } }
 
 .divider { height: 1px; background: var(--border); margin: 20px 0; }
-
-/* STATUS */
-.status-box {
-  background: var(--surface2);
-  border: 1px solid var(--border);
-  border-radius: 6px;
-  padding: 11px 14px;
-  font-size: 12px;
-  color: var(--text2);
-  display: none;
-  margin-top: 12px;
-  font-family: var(--mono);
-}
-
+.status-box { background: var(--surface2); border: 1px solid var(--border); border-radius: 6px; padding: 11px 14px; font-size: 12px; color: var(--text2); display: none; margin-top: 12px; font-family: var(--mono); }
 .status-box.visible { display: block; }
 
-/* RESULT */
-.result-card {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  overflow: hidden;
-  display: none;
-  animation: fadeUp 0.22s ease;
-  margin-bottom: 14px;
-}
-
-@keyframes fadeUp {
-  from { opacity: 0; transform: translateY(6px); }
-  to   { opacity: 1; transform: translateY(0); }
-}
-
-.result-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 12px 18px;
-  border-bottom: 1px solid var(--border);
-  background: var(--surface2);
-}
-
-.result-title {
-  font-family: var(--mono);
-  font-size: 10px;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  color: var(--text2);
-}
-
+.result-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; display: none; animation: fadeUp 0.22s ease; margin-bottom: 14px; }
+@keyframes fadeUp { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+.result-header { display: flex; align-items: center; justify-content: space-between; padding: 12px 18px; border-bottom: 1px solid var(--border); background: var(--surface2); }
+.result-title { font-family: var(--mono); font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--text2); }
 .char-count { font-family: var(--mono); font-size: 11px; color: var(--text3); }
 .char-count.over { color: var(--red); }
-
 .result-body { padding: 18px; }
-
-.result-text {
-  font-size: 15px;
-  line-height: 1.8;
-  color: var(--text);
-  word-break: break-all;
-  margin-bottom: 14px;
-}
-
-.btn-copy {
-  background: var(--surface2);
-  border: 1px solid var(--border2);
-  border-radius: 5px;
-  padding: 6px 14px;
-  font-family: var(--mono);
-  font-size: 11px;
-  font-weight: 700;
-  color: var(--text2);
-  cursor: pointer;
-  letter-spacing: 0.05em;
-  transition: all 0.15s;
-}
-
+.result-text { font-size: 15px; line-height: 1.8; color: var(--text); word-break: break-all; margin-bottom: 14px; }
+.btn-copy { background: var(--surface2); border: 1px solid var(--border2); border-radius: 5px; padding: 6px 14px; font-family: var(--mono); font-size: 11px; font-weight: 700; color: var(--text2); cursor: pointer; letter-spacing: 0.05em; transition: all 0.15s; }
 .btn-copy:hover { border-color: var(--accent); color: var(--accent); }
 .btn-copy.copied { border-color: var(--accent); color: var(--accent); background: var(--accent-dim); }
 
-/* TAGS */
-.tags-card {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  padding: 18px;
-  display: none;
-  animation: fadeUp 0.25s ease;
-}
-
-.tags-title {
-  font-family: var(--mono);
-  font-size: 10px;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  color: var(--text3);
-  margin-bottom: 10px;
-}
-
+.tags-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 18px; display: none; animation: fadeUp 0.25s ease; }
+.tags-title { font-family: var(--mono); font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--text3); margin-bottom: 10px; }
 .tag-row { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px; }
-
-.tag {
-  display: inline-flex;
-  align-items: center;
-  padding: 4px 10px;
-  border-radius: 4px;
-  font-size: 12px;
-  font-weight: 500;
-  border: 1px solid;
-}
-
-.tag-orig  { background: #1e1e1e; border-color: #383838; color: #888580; }
-.tag-main  { background: var(--blue-dim); border-color: var(--blue-border); color: var(--blue); }
-.tag-ai    { background: var(--accent-dim); border-color: var(--accent-border); color: var(--accent); }
-
+.tag { display: inline-flex; align-items: center; padding: 4px 10px; border-radius: 4px; font-size: 12px; font-weight: 500; border: 1px solid; }
+.tag-orig { background: #1e1e1e; border-color: #383838; color: #888580; }
+.tag-main { background: var(--blue-dim); border-color: var(--blue-border); color: var(--blue); }
+.tag-ai { background: var(--accent-dim); border-color: var(--accent-border); color: var(--accent); }
 .legend { display: flex; gap: 14px; flex-wrap: wrap; }
 .legend-item { display: flex; align-items: center; gap: 6px; font-size: 11px; color: var(--text3); }
 .dot { width: 8px; height: 8px; border-radius: 2px; display: inline-block; }
 
-/* ERROR */
-.err-box {
-  background: rgba(255,85,85,0.07);
-  border: 1px solid rgba(255,85,85,0.25);
-  color: #ff7070;
-  border-radius: 6px;
-  padding: 11px 14px;
-  font-size: 13px;
-  display: none;
-  margin-top: 12px;
-  line-height: 1.5;
-}
-
-.footer {
-  text-align: center;
-  font-size: 11px;
-  color: var(--text3);
-  margin-top: 44px;
-  font-family: var(--mono);
-  letter-spacing: 0.05em;
-}
+.err-box { background: rgba(255,85,85,0.07); border: 1px solid rgba(255,85,85,0.25); color: #ff7070; border-radius: 6px; padding: 11px 14px; font-size: 13px; display: none; margin-top: 12px; line-height: 1.5; }
+.footer { text-align: center; font-size: 11px; color: var(--text3); margin-top: 44px; font-family: var(--mono); letter-spacing: 0.05em; }
 </style>
 </head>
 <body>
@@ -382,6 +137,12 @@ input[type="range"]::-webkit-slider-thumb:hover { transform: scale(1.2); }
     <div class="badge">Naver Shopping</div>
     <h1>키워드 <em>빌더</em></h1>
     <p class="sub">네이버 쇼핑 실제 상품명 분석 → 내 상품에 없는 키워드만 자동 추출</p>
+  </div>
+
+  <!-- 툴 링크 -->
+  <div class="tool-links">
+    <a href="/tag-extractor.html" class="tool-link">🏷️ 태그·속성 추출기</a>
+    <a href="/name-maker.html" class="tool-link">⚙️ 상품명 제조기</a>
   </div>
 
   <!-- 엑셀 일괄 처리 카드 -->
@@ -406,7 +167,7 @@ input[type="range"]::-webkit-slider-thumb:hover { transform: scale(1.2); }
     <div class="step" id="step3"><span class="step-num">3</span>결과</div>
   </div>
 
-  <!-- STEP 1: 네이버 쇼핑 수집 -->
+  <!-- STEP 1 -->
   <div class="card" id="card1">
     <div class="card-title">① 네이버 쇼핑에서 경쟁 상품명 수집</div>
     <div class="field">
@@ -416,8 +177,7 @@ input[type="range"]::-webkit-slider-thumb:hover { transform: scale(1.2); }
     <div class="field">
       <label>수집 페이지 수</label>
       <div class="slider-wrap">
-        <input type="range" id="pageCount" min="1" max="10" value="3" step="1"
-          oninput="document.getElementById('pageCountVal').textContent=this.value" />
+        <input type="range" id="pageCount" min="1" max="10" value="3" step="1" oninput="document.getElementById('pageCountVal').textContent=this.value" />
         <span class="slider-val" id="pageCountVal">3</span>
       </div>
       <div class="slider-hint">1페이지 = 상품 100개 · 최대 10페이지(1,000개)</div>
@@ -431,7 +191,7 @@ input[type="range"]::-webkit-slider-thumb:hover { transform: scale(1.2); }
     <div class="err-box" id="errBox1"></div>
   </div>
 
-  <!-- STEP 2: 내 상품명 입력 -->
+  <!-- STEP 2 -->
   <div class="card" id="card2" style="opacity:0.4;pointer-events:none;">
     <div class="card-title">② 내 상품명 & 키워드 설정</div>
     <div class="field">
@@ -449,8 +209,7 @@ input[type="range"]::-webkit-slider-thumb:hover { transform: scale(1.2); }
     <div class="field">
       <label>추가 키워드 개수</label>
       <div class="slider-wrap">
-        <input type="range" id="addCount" min="1" max="30" value="10" step="1"
-          oninput="document.getElementById('addCountVal').textContent=this.value" />
+        <input type="range" id="addCount" min="1" max="30" value="10" step="1" oninput="document.getElementById('addCountVal').textContent=this.value" />
         <span class="slider-val" id="addCountVal">10</span>
       </div>
       <div class="slider-hint">1 ~ 30개 · 네이버 상품명 권장 100자 이내</div>
@@ -463,7 +222,7 @@ input[type="range"]::-webkit-slider-thumb:hover { transform: scale(1.2); }
     <div class="err-box" id="errBox2"></div>
   </div>
 
-  <!-- STEP 3: 결과 -->
+  <!-- STEP 3 -->
   <div class="result-card" id="resultCard">
     <div class="result-header">
       <span class="result-title">완성 상품명</span>
@@ -489,7 +248,6 @@ input[type="range"]::-webkit-slider-thumb:hover { transform: scale(1.2); }
     </div>
   </div>
 
-  <!-- ACQ 섹션 -->
   <div class="result-card" id="acqCard" style="margin-top:14px;">
     <div class="result-header">
       <span class="result-title">ACQ · 사전 검색 키워드 30개</span>
@@ -500,20 +258,14 @@ input[type="range"]::-webkit-slider-thumb:hover { transform: scale(1.2); }
       <button class="btn-copy" id="acqCopyBtn" onclick="copyAcq()">복사</button>
     </div>
   </div>
-  <div style="margin-top:32px;display:flex;gap:10px;flex-wrap:wrap;">
-    <a href="/tag-extractor.html" ...>🏷️ 태그·속성 추출기</a>
-    <a href="/name-maker.html" ...>⚙️ 상품명 제조기</a>
-  </div>
-  <div class="footer">keyword-builder v2 · naver shopping + claude</div>
 
+  <div class="footer">keyword-builder v2 · naver shopping + claude</div>
 </div>
 <script>
 let collectedTitles = [];
 let searchedKeyword = '';
 
-// ── 엑셀 양식 다운로드 ──
 function downloadTemplate() {
-  // SheetJS로 양식 생성
   const wb = XLSX.utils.book_new();
   const ws = XLSX.utils.aoa_to_sheet([
     ['상품명', '메인키워드', '수집페이지수', '추가키워드개수', '제외키워드'],
@@ -526,119 +278,55 @@ function downloadTemplate() {
   XLSX.writeFile(wb, '키워드빌더_양식.xlsx');
 }
 
-// ── 엑셀 업로드 처리 ──
 async function handleExcelUpload(event) {
   const file = event.target.files[0];
   if (!file) return;
-
   setBatchStatus(`📂 "${file.name}" 읽는 중...`);
-
   const reader = new FileReader();
   reader.onload = async (e) => {
     try {
       const wb = XLSX.read(e.target.result, { type: 'array' });
       const ws = wb.Sheets[wb.SheetNames[0]];
       const rows = XLSX.utils.sheet_to_json(ws, { header: 1 });
-
-      // 헤더 제외, 빈 행 제거
       const dataRows = rows.slice(1).filter(r => r[0] && r[1]);
       if (dataRows.length === 0) return setBatchStatus('❌ 데이터가 없어요. 양식을 확인해주세요.');
-
-      setBatchStatus(`⚙️ 총 ${dataRows.length}개 상품 처리 시작... (행마다 네이버 수집 포함)`);
-
+      setBatchStatus(`⚙️ 총 ${dataRows.length}개 상품 처리 시작...`);
       const results = [];
       for (let i = 0; i < dataRows.length; i++) {
         const [productName, mainKeyword, pages = 3, addCount = 10, excludeRaw = ''] = dataRows[i];
         const batchExclude = excludeRaw ? String(excludeRaw).split(/[,，]+/).map(s => s.trim().toLowerCase().replace(/\s+/g,'')).filter(Boolean) : [];
-        const batchIsExcluded = (str) => {
-          const s = str.toLowerCase().replace(/\s+/g,'');
-          return batchExclude.some(ex => s === ex || s.includes(ex) || (ex.includes(s) && ex.length >= 2));
-        };
+        const batchIsExcluded = (str) => { const s = str.toLowerCase().replace(/\s+/g,''); return batchExclude.some(ex => s === ex || s.includes(ex) || (ex.includes(s) && ex.length >= 2)); };
         setBatchStatus(`⚙️ [${i+1}/${dataRows.length}] "${productName.slice(0,20)}..." 처리 중...`);
-
         try {
-          // 1. 네이버 수집
-          const searchRes = await fetch('/api/search', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ keyword: mainKeyword, pages: parseInt(pages) })
-          });
+          const searchRes = await fetch('/api/search', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ keyword: mainKeyword, pages: parseInt(pages) }) });
           const searchData = await searchRes.json();
           const titles = searchData.titles || [];
-
-          // 2. 빈도 분석
           const tokens = mainKeyword.toLowerCase().split(/[\s,，]+/).filter(Boolean);
           const existing = productName.toLowerCase().split(/\s+/).map(t => t.replace(/,/g,''));
           const wordFreq = {};
-          titles.forEach(t => {
-            t.split(/\s+/).forEach(w => {
-              const wl = w.toLowerCase().replace(/[^가-힣a-z0-9]/g,'');
-              if (wl.length >= 2 && !existing.includes(wl)) wordFreq[wl] = (wordFreq[wl]||0)+1;
-            });
-          });
+          titles.forEach(t => { t.split(/\s+/).forEach(w => { const wl = w.toLowerCase().replace(/[^가-힣a-z0-9]/g,''); if (wl.length >= 2 && !existing.includes(wl)) wordFreq[wl] = (wordFreq[wl]||0)+1; }); });
           const topWords = Object.entries(wordFreq).sort((a,b)=>b[1]-a[1]).slice(0,60).map(([w,c])=>`${w}(${c})`).join(', ');
-
-          // 3. AI 3개 동시 호출
           const kwPrompt = `네이버 쇼핑 상품명 ${titles.length}개 분석 결과 빈도 키워드:\n${topWords}\n\n상품명: ${productName}\n메인키워드: ${mainKeyword}\n이미포함: ${existing.join(', ')}\n\n추가 명사 키워드 ${addCount}개 뽑아주세요.\n규칙: 1.중복금지 2.메인키워드 합성어 금지 3.독립명사만 4.정확히${addCount}개 5.쉼표구분 키워드만`;
           const acqPrompt = `메인키워드: "${mainKeyword}"\n상품명: ${productName}\n\n소비자가 메인키워드 검색 전 먼저 검색할 ACQ 키워드 30개.\n규칙: 1.메인키워드 포함 합성어 금지 2.탐색단계 키워드 3.정확히30개 4.쉼표구분 키워드만`;
-          const decompPrompt = `"${mainKeyword}" 키워드를 의미 단위 명사로 분해.\n예: "무선청소기"→무선,청소기 / "z플립5케이스"→z플립5,케이스\n쉼표구분, 결과만 출력`;
-
+          const decompPrompt = `"${mainKeyword}" 키워드를 의미 단위 명사로 분해.\n쉼표구분, 결과만 출력`;
           const [r1, r2, r3] = await Promise.all([
             fetch('/api/generate', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({prompt: kwPrompt}) }),
             fetch('/api/generate', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({prompt: acqPrompt}) }),
             fetch('/api/generate', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({prompt: decompPrompt}) }),
           ]);
           const [d1, d2, d3] = await Promise.all([r1.json(), r2.json(), r3.json()]);
-
-          // 4. 분해 토큰
-          const decompTokens = new Set([...tokens, ...( d3.text||'').split(/[,，\n]/).map(s=>s.trim().toLowerCase()).filter(s=>s.length>=2)]);
-
-          // 5. 상품명 필터링
+          const decompTokens = new Set([...tokens, ...(d3.text||'').split(/[,，\n]/).map(s=>s.trim().toLowerCase()).filter(s=>s.length>=2)]);
           const productTokens = productName.split(/\s+/).filter(Boolean);
-          const filteredTokens = productTokens.map(t => {
-            let r = t;
-            for (const sk of decompTokens) {
-              if (sk.length < 2) continue;
-              const tl = r.toLowerCase();
-              if (tl === sk) return null;
-              if (tl.endsWith(sk)) r = r.slice(0, tl.length - sk.length).trim();
-              else if (tl.startsWith(sk)) r = r.slice(sk.length).trim();
-            }
-            r = r.replace(/,/g,'').trim();
-            return r.length >= 1 ? r : null;
-          }).filter(Boolean);
-
-          // 6. AI 키워드 파싱
-          const aiWords = (d1.text||'').split(/[,，\n]/).map(s=>s.trim().replace(/^[\d\.\-\*\s]+/,'')).filter(s => {
-            if (!s || s.length===0 || s.length>12) return false;
-            const sl = s.toLowerCase();
-            if (existing.includes(sl)) return false;
-            if ([...decompTokens].some(dk => dk.length>=2 && sl.includes(dk))) return false;
-            return true;
-          }).slice(0, parseInt(addCount));
-
-          const finalName = [...filteredTokens, ...aiWords]
-            .map(t => t.replace(/[,{}[\]()]/g, '').trim())
-            .filter(t => t.length >= 1 && !batchIsExcluded(t)).join(' ');
-          const acqText = (d2.text||'')
-            .replace(/#\s*acq.*?[\n,]/gi, '')
-            .replace(/^.*acq.*$/gim, '')
-            .replace(/^.*키워드.*개.*$/gim, '')
-            .split(/[,，\n]/)
-            .map(s => s.trim().replace(/^[\d\.\-\*#\s]+/, '').replace(/\(.*?\)/g,'').replace(/[{}[\]()#]/g,'').trim())
-            .filter(s => s.length >= 2 && s.length <= 15)
-            .slice(0, 30).join(', ');
-
+          const filteredTokens = productTokens.map(t => { let r = t; for (const sk of decompTokens) { if (sk.length < 2) continue; const tl = r.toLowerCase(); if (tl === sk) return null; if (tl.endsWith(sk)) r = r.slice(0, tl.length - sk.length).trim(); else if (tl.startsWith(sk)) r = r.slice(sk.length).trim(); } r = r.replace(/,/g,'').trim(); return r.length >= 1 ? r : null; }).filter(Boolean);
+          const aiWords = (d1.text||'').split(/[,，\n]/).map(s=>s.trim().replace(/^[\d\.\-\*\s]+/,'')).filter(s => { if (!s || s.length===0 || s.length>12) return false; const sl = s.toLowerCase(); if (existing.includes(sl)) return false; if ([...decompTokens].some(dk => dk.length>=2 && sl.includes(dk))) return false; return true; }).slice(0, parseInt(addCount));
+          const finalName = [...filteredTokens, ...aiWords].map(t => t.replace(/[,{}[\]()]/g, '').trim()).filter(t => t.length >= 1 && !batchIsExcluded(t)).join(' ');
+          const acqText = (d2.text||'').split(/[,，\n]/).map(s => s.trim().replace(/^[\d\.\-\*#\s]+/, '').replace(/\(.*?\)/g,'').replace(/[{}[\]()#]/g,'').trim()).filter(s => s.length >= 2 && s.length <= 15).slice(0, 30).join(', ');
           results.push({ productName, mainKeyword, finalName, acqText, status: '완료' });
         } catch(err) {
           results.push({ productName, mainKeyword, finalName: '', acqText: '', status: '오류: '+err.message });
         }
-
-        // API 과부하 방지 딜레이
         await new Promise(r => setTimeout(r, 500));
       }
-
-      // 7. 결과 엑셀 생성
       setBatchStatus(`📊 결과 엑셀 생성 중...`);
       const outWb = XLSX.utils.book_new();
       const outData = [['원본 상품명','메인키워드','완성 상품명','ACQ 30개','상태']];
@@ -648,410 +336,126 @@ async function handleExcelUpload(event) {
       XLSX.utils.book_append_sheet(outWb, outWs, '결과');
       XLSX.writeFile(outWb, '키워드빌더_결과.xlsx');
       setBatchStatus(`✅ 완료! ${results.length}개 처리 → 결과 엑셀 다운로드됨`);
-
-    } catch(err) {
-      setBatchStatus('❌ 오류: ' + err.message);
-    }
+    } catch(err) { setBatchStatus('❌ 오류: ' + err.message); }
   };
   reader.readAsArrayBuffer(file);
   event.target.value = '';
 }
 
-function setBatchStatus(msg) {
-  const el = document.getElementById('batchStatus');
-  el.textContent = msg;
-  el.classList.toggle('visible', !!msg);
-}
+function setBatchStatus(msg) { const el = document.getElementById('batchStatus'); el.textContent = msg; el.classList.toggle('visible', !!msg); }
 
 async function searchNaver() {
   const keyword = document.getElementById('searchKeyword').value.trim();
-  const pages   = parseInt(document.getElementById('pageCount').value);
-
+  const pages = parseInt(document.getElementById('pageCount').value);
   if (!keyword) return showErr(1, '메인 키워드를 입력해주세요.');
   hideErr(1);
   setBtnLoading('searchBtn', 'searchBtnLabel', true, '수집 중...');
   setStatus(`네이버 쇼핑에서 "${keyword}" 검색 중... (${pages}페이지)`);
-
-  // 결과 초기화
   document.getElementById('resultCard').style.display = 'none';
-  document.getElementById('tagsCard').style.display   = 'none';
-  document.getElementById('acqCard').style.display    = 'none';
-
-  // step 초기화
-  ['step1','step2','step3'].forEach(id => {
-    document.getElementById(id).classList.remove('active','done');
-  });
+  document.getElementById('tagsCard').style.display = 'none';
+  document.getElementById('acqCard').style.display = 'none';
+  ['step1','step2','step3'].forEach(id => { document.getElementById(id).classList.remove('active','done'); });
   document.getElementById('step1').classList.add('active');
   document.getElementById('card2').style.opacity = '0.4';
   document.getElementById('card2').style.pointerEvents = 'none';
-
-  // 메인키워드 입력창 초기화
   document.getElementById('mainKeyword').value = '';
-
   try {
-    const res = await fetch('/api/search', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ keyword, pages })
-    });
-
-    if (!res.ok) {
-      const err = await res.json().catch(() => ({}));
-      throw new Error(err?.error || `HTTP ${res.status}`);
-    }
-
+    const res = await fetch('/api/search', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ keyword, pages }) });
+    if (!res.ok) { const err = await res.json().catch(() => ({})); throw new Error(err?.error || `HTTP ${res.status}`); }
     const data = await res.json();
     collectedTitles = data.titles || [];
     searchedKeyword = keyword;
-
     setStatus(`✓ 상품명 ${collectedTitles.length}개 수집 완료!`);
-
-    // Step 2 활성화
     document.getElementById('card2').style.opacity = '1';
     document.getElementById('card2').style.pointerEvents = 'auto';
     document.getElementById('step1').classList.remove('active');
     document.getElementById('step1').classList.add('done');
     document.getElementById('step2').classList.add('active');
-
-    // 수집한 키워드로 메인키워드 자동 입력
-    document.getElementById('searchKeyword').value && 
-      !document.getElementById('mainKeyword').value &&
-      (document.getElementById('mainKeyword').value = keyword);
-
-  } catch (e) {
-    showErr(1, '오류: ' + e.message);
-    setStatus('');
-  } finally {
-    setBtnLoading('searchBtn', 'searchBtnLabel', false, '네이버 쇼핑 수집 시작');
-  }
+    document.getElementById('searchKeyword').value && !document.getElementById('mainKeyword').value && (document.getElementById('mainKeyword').value = keyword);
+  } catch (e) { showErr(1, '오류: ' + e.message); setStatus(''); }
+  finally { setBtnLoading('searchBtn', 'searchBtnLabel', false, '네이버 쇼핑 수집 시작'); }
 }
 
 async function generateKeywords() {
-  const productName    = document.getElementById('productName').value.trim();
-  const mainKeyword    = document.getElementById('mainKeyword').value.trim();
-  const excludeInput   = document.getElementById('excludeKeyword').value.trim();
-  const addCount       = parseInt(document.getElementById('addCount').value);
-
-  // 제외 키워드 파싱 - 쉼표 단위, 소문자+공백제거로 저장
-  const excludeTokens = excludeInput
-    ? excludeInput.split(/[,，]+/).map(s => s.trim().toLowerCase().replace(/\s+/g, '')).filter(Boolean)
-    : [];
-
-  // 제외 키워드 매칭 함수 - 비교 대상도 공백 제거 후 비교
-  const isExcluded = (str) => {
-    const s = str.toLowerCase().replace(/\s+/g, '');
-    return excludeTokens.some(ex => s === ex || s.includes(ex) || ex.includes(s) && ex.length >= 2);
-  };
-
+  const productName = document.getElementById('productName').value.trim();
+  const mainKeyword = document.getElementById('mainKeyword').value.trim();
+  const excludeInput = document.getElementById('excludeKeyword').value.trim();
+  const addCount = parseInt(document.getElementById('addCount').value);
+  const excludeTokens = excludeInput ? excludeInput.split(/[,，]+/).map(s => s.trim().toLowerCase().replace(/\s+/g, '')).filter(Boolean) : [];
+  const isExcluded = (str) => { const s = str.toLowerCase().replace(/\s+/g, ''); return excludeTokens.some(ex => s === ex || s.includes(ex) || ex.includes(s) && ex.length >= 2); };
   if (!productName) return showErr(2, '내 상품명을 입력해주세요.');
   hideErr(2);
-
   document.getElementById('resultCard').style.display = 'none';
-  document.getElementById('tagsCard').style.display   = 'none';
-  document.getElementById('acqCard').style.display    = 'none';
+  document.getElementById('tagsCard').style.display = 'none';
+  document.getElementById('acqCard').style.display = 'none';
   setBtnLoading('generateBtn', 'generateBtnLabel', true, '분석 중...');
-
   const productTokens = productName.split(/\s+/).filter(Boolean);
-  const mainTokens    = mainKeyword ? mainKeyword.split(/[\s,，]+/).filter(Boolean) : [];
-  const productSet    = new Set(productTokens.map(t => t.toLowerCase()));
+  const mainTokens = mainKeyword ? mainKeyword.split(/[\s,，]+/).filter(Boolean) : [];
+  const productSet = new Set(productTokens.map(t => t.toLowerCase()));
   const newMainTokens = mainTokens.filter(t => !productSet.has(t.toLowerCase()));
-  const allExisting   = [...productTokens, ...newMainTokens].map(t => t.toLowerCase());
-
-  // 검색키워드 기반 필터링 - 일단 띄어쓰기 기준 토큰만
+  const allExisting = [...productTokens, ...newMainTokens].map(t => t.toLowerCase());
   const searchTokens = searchedKeyword.toLowerCase().split(/[\s,，]+/).filter(Boolean);
-  const searchKwFull = searchTokens.join('');
   const mainKwTokenSet = new Set([...searchTokens, ...mainTokens.map(t => t.toLowerCase())]);
-
-  // filteredProductTokens는 API에서 분해 결과 받은 후 적용 (아래 try 블록에서 처리)
-
-
-  // 메인키워드 토큰 낱글자 Set (합성어 필터링용)
-  const mainTokenSet = new Set(
-    [...productTokens, ...newMainTokens].flatMap(t => [t.toLowerCase(), ...t.split('').filter(c => c.length)])
-  );
-  const mainKeywordFull = mainKeyword.toLowerCase().replace(/[\s,，]+/g, '');
-
-  // 수집된 상품명에서 빈도 높은 단어 추출
   const wordFreq = {};
-  collectedTitles.forEach(title => {
-    title.split(/\s+/).forEach(word => {
-      const w = word.toLowerCase().replace(/[^가-힣a-z0-9]/g, '');
-      if (w.length >= 2 && !allExisting.includes(w)) {
-        wordFreq[w] = (wordFreq[w] || 0) + 1;
-      }
-    });
-  });
-
-  const topWords = Object.entries(wordFreq)
-    .sort((a, b) => b[1] - a[1])
-    .slice(0, 60)
-    .map(([w, cnt]) => `${w}(${cnt})`)
-    .join(', ');
-
-  // 상품명 추가 키워드 프롬프트
-  const prompt = `네이버 쇼핑 실제 상품명 ${collectedTitles.length}개를 분석한 결과, 자주 등장하는 키워드입니다:
-${topWords}
-
-내 상품명: ${productName}
-메인 키워드: ${mainKeyword || '없음'}
-이미 포함된 단어: ${allExisting.join(', ')}
-
-위 빈도 데이터를 참고해서, 내 상품에 추가하면 좋을 명사 키워드 ${addCount}개를 뽑아주세요.
-
-규칙:
-1. 이미 포함된 단어와 중복 금지
-2. 메인키워드(${mainKeyword})를 포함하는 합성어 금지 (예: "${mainKeyword}추천", "${mainKeyword}가격" 같은 형태 제외)
-3. 메인키워드와 완전히 독립적인 별개의 명사만
-4. 실제 네이버 쇼핑 검색어 기반 (빈도 높은 것 우선)
-5. 한 단어 또는 두 단어 복합명사만
-6. 정확히 ${addCount}개
-7. 쉼표로 구분, 키워드만 출력 (설명 없이)`;
-
-  // ACQ 프롬프트
-  const acqPrompt = `메인 키워드: "${mainKeyword || productTokens[0]}"
-상품명: ${productName}
-
-이 상품을 구매하려는 소비자가 메인키워드를 검색하기 전에 먼저 검색할 만한 사전 탐색 키워드(ACQ) 30개를 뽑아주세요.
-
-예시: 메인키워드가 "무선선풍기"라면 → 선풍기추천, 여름가전추천, 소음없는선풍기, 거실선풍기
-
-규칙:
-1. 메인키워드 자체나 메인키워드를 포함한 합성어 금지
-2. 소비자의 니즈/상황/비교 탐색 단계를 반영한 키워드
-3. 실제 네이버에서 검색할 법한 자연스러운 키워드
-4. 정확히 30개
-5. 쉼표로 구분, 키워드만 출력
-6. "ACQ", "키워드", "#", 번호 등 절대 출력하지 말 것
-7. 첫 번째 출력부터 바로 키워드 시작할 것
-
-출력 예시: 선풍기추천, 여름가전추천, 소음없는선풍기, 거실선풍기, ...`;
-
-  // 메인키워드 형태소 분해 프롬프트
-  const decomposePrompt = `"${searchedKeyword}" 이 키워드를 의미 단위 명사로 분해해주세요.
-
-예시:
-- "무선청소기" → 무선, 청소기
-- "z플립5케이스" → z플립5, 케이스
-- "홍삼정액" → 홍삼, 정액
-- "무선선풍기" → 무선, 선풍기
-
-규칙:
-1. 의미 있는 명사 단위로만 분해
-2. 쉼표로 구분
-3. 분해 결과만 출력 (설명 없이)`;
-
-  // 브랜드명 추출 프롬프트
-  const brandPrompt = `아래는 네이버 쇼핑에서 수집한 실제 상품명들입니다:
-${collectedTitles.slice(0, 40).join('\n')}
-
-위 상품명에서 브랜드명(제조사명, 회사명)만 추출해주세요.
-
-규칙:
-1. 브랜드명/회사명만 (예: 종근당, 정관장, 다이슨, 삼성, CJ 등)
-2. 일반 명사, 제품명, 모델명, 수식어는 제외
-3. 중복 제거
-4. 쉼표로 구분, 브랜드명만 출력 (설명 없이)
-5. 없으면 "없음" 출력`;
-
+  collectedTitles.forEach(title => { title.split(/\s+/).forEach(word => { const w = word.toLowerCase().replace(/[^가-힣a-z0-9]/g, ''); if (w.length >= 2 && !allExisting.includes(w)) { wordFreq[w] = (wordFreq[w] || 0) + 1; } }); });
+  const topWords = Object.entries(wordFreq).sort((a, b) => b[1] - a[1]).slice(0, 60).map(([w, cnt]) => `${w}(${cnt})`).join(', ');
+  const prompt = `네이버 쇼핑 실제 상품명 ${collectedTitles.length}개를 분석한 결과, 자주 등장하는 키워드입니다:\n${topWords}\n\n내 상품명: ${productName}\n메인 키워드: ${mainKeyword || '없음'}\n이미 포함된 단어: ${allExisting.join(', ')}\n\n위 빈도 데이터를 참고해서, 내 상품에 추가하면 좋을 명사 키워드 ${addCount}개를 뽑아주세요.\n\n규칙:\n1. 이미 포함된 단어와 중복 금지\n2. 메인키워드(${mainKeyword})를 포함하는 합성어 금지\n3. 메인키워드와 완전히 독립적인 별개의 명사만\n4. 실제 네이버 쇼핑 검색어 기반 (빈도 높은 것 우선)\n5. 한 단어 또는 두 단어 복합명사만\n6. 정확히 ${addCount}개\n7. 쉼표로 구분, 키워드만 출력 (설명 없이)`;
+  const acqPrompt = `메인 키워드: "${mainKeyword || productTokens[0]}"\n상품명: ${productName}\n\n이 상품을 구매하려는 소비자가 메인키워드를 검색하기 전에 먼저 검색할 만한 사전 탐색 키워드(ACQ) 30개를 뽑아주세요.\n\n규칙:\n1. 메인키워드 자체나 메인키워드를 포함한 합성어 금지\n2. 소비자의 니즈/상황/비교 탐색 단계를 반영한 키워드\n3. 실제 네이버에서 검색할 법한 자연스러운 키워드\n4. 정확히 30개\n5. 쉼표로 구분, 키워드만 출력\n6. "ACQ", "키워드", "#", 번호 등 절대 출력하지 말 것`;
+  const decomposePrompt = `"${searchedKeyword}" 이 키워드를 의미 단위 명사로 분해해주세요.\n쉼표로 구분, 분해 결과만 출력 (설명 없이)`;
+  const brandPrompt = `아래는 네이버 쇼핑에서 수집한 실제 상품명들입니다:\n${collectedTitles.slice(0, 40).join('\n')}\n\n위 상품명에서 브랜드명(제조사명, 회사명)만 추출해주세요.\n규칙:\n1. 브랜드명/회사명만\n2. 일반 명사, 제품명, 모델명, 수식어는 제외\n3. 중복 제거\n4. 쉼표로 구분, 브랜드명만 출력\n5. 없으면 "없음" 출력`;
   try {
-    // 4개 API 동시 호출
     const [res1, res2, res3, res4] = await Promise.all([
       fetch('/api/generate', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ prompt }) }),
       fetch('/api/generate', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ prompt: acqPrompt }) }),
       fetch('/api/generate', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ prompt: brandPrompt }) }),
       fetch('/api/generate', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ prompt: decomposePrompt }) })
     ]);
-
-    if (!res1.ok) { const e = await res1.json().catch(()=>({})); throw new Error(e?.error || `HTTP ${res1.status}`); }
-    if (!res2.ok) { const e = await res2.json().catch(()=>({})); throw new Error(e?.error || `HTTP ${res2.status}`); }
-    if (!res3.ok) { const e = await res3.json().catch(()=>({})); throw new Error(e?.error || `HTTP ${res3.status}`); }
-    if (!res4.ok) { const e = await res4.json().catch(()=>({})); throw new Error(e?.error || `HTTP ${res4.status}`); }
-
     const [data1, data2, data3, data4] = await Promise.all([res1.json(), res2.json(), res3.json(), res4.json()]);
-
-    // 메인키워드 분해 결과 파싱
     const raw4 = data4.text || '';
-    const decomposedTokens = new Set([
-      ...searchTokens,
-      ...raw4.split(/[,，\n]/).map(s => s.trim().toLowerCase()).filter(s => s.length >= 2)
-    ]);
-
-    // 상품명 추가 키워드 처리
-    // 분해된 메인키워드 기준 상품명 필터링
-    const filteredProductTokens = productTokens
-      .map(t => {
-        let result = t;
-        for (const sk of decomposedTokens) {
-          if (sk.length < 2) continue;
-          const tl = result.toLowerCase();
-          if (tl === sk) return null;
-          if (tl.endsWith(sk)) result = result.slice(0, tl.length - sk.length).trim();
-          else if (tl.startsWith(sk)) result = result.slice(sk.length).trim();
-        }
-        result = result.replace(/,/g, '').trim();
-        return result.length >= 1 ? result : null;
-      })
-      .filter(Boolean);
-
-    // 상품명 추가 키워드 처리
+    const decomposedTokens = new Set([...searchTokens, ...raw4.split(/[,，\n]/).map(s => s.trim().toLowerCase()).filter(s => s.length >= 2)]);
+    const filteredProductTokens = productTokens.map(t => { let result = t; for (const sk of decomposedTokens) { if (sk.length < 2) continue; const tl = result.toLowerCase(); if (tl === sk) return null; if (tl.endsWith(sk)) result = result.slice(0, tl.length - sk.length).trim(); else if (tl.startsWith(sk)) result = result.slice(sk.length).trim(); } result = result.replace(/,/g, '').trim(); return result.length >= 1 ? result : null; }).filter(Boolean);
     const raw1 = data1.text || '';
     const searchKwLower = searchedKeyword.toLowerCase().replace(/[\s,，]+/g, '');
-    const aiWords = raw1
-      .split(/[,，\n]/)
-      .map(s => s.trim().replace(/^[\d\.\-\*\s]+/, ''))
-      .filter(s => {
-        if (!s || s.length === 0 || s.length > 12) return false;
-        const sl = s.toLowerCase();
-        if (allExisting.includes(sl)) return false;
-        // 검색키워드 전체 포함 합성어 제거
-        if (searchKwLower && sl.includes(searchKwLower)) return false;
-        // 검색키워드 개별 토큰 포함 합성어 제거
-        if (searchTokens.some(sk => sk.length >= 2 && sl.includes(sk))) return false;
-        // AI가 분해한 메인키워드 구성 단어 포함 제거 (ex: 충전기, 무선 등)
-        if ([...decomposedTokens].some(dk => dk.length >= 2 && sl.includes(dk))) return false;
-        // 기존 상품명 토큰 포함 합성어 제거
-        if (allExisting.some(ex => ex.length >= 2 && sl.includes(ex))) return false;
-        // 제외 키워드 포함 여부
-        if (isExcluded(s)) return false;
-        return true;
-      })
-      .slice(0, addCount);
-
-    // 브랜드명 파싱
+    const aiWords = raw1.split(/[,，\n]/).map(s => s.trim().replace(/^[\d\.\-\*\s]+/, '')).filter(s => { if (!s || s.length === 0 || s.length > 12) return false; const sl = s.toLowerCase(); if (allExisting.includes(sl)) return false; if (searchKwLower && sl.includes(searchKwLower)) return false; if (searchTokens.some(sk => sk.length >= 2 && sl.includes(sk))) return false; if ([...decomposedTokens].some(dk => dk.length >= 2 && sl.includes(dk))) return false; if (allExisting.some(ex => ex.length >= 2 && sl.includes(ex))) return false; if (isExcluded(s)) return false; return true; }).slice(0, addCount);
     const raw3 = data3.text || '';
-    const brandNames = raw3.trim() === '없음' ? [] :
-      raw3.split(/[,，\n]/)
-        .map(s => s.trim().replace(/^[\d\.\-\*\s]+/, ''))
-        .filter(s => s.length >= 1 && s !== '없음');
+    const brandNames = raw3.trim() === '없음' ? [] : raw3.split(/[,，\n]/).map(s => s.trim().replace(/^[\d\.\-\*\s]+/, '')).filter(s => s.length >= 1 && s !== '없음');
     const brandSet = new Set(brandNames.map(b => b.toLowerCase()));
-
-    // 완성 상품명에서 브랜드 토큰 제거 + 괄호 특수문자 제거 + 제외 키워드 제거
     const removedBrands = [];
-    const finalTokens = [...filteredProductTokens, ...aiWords]
-      .map(t => t.replace(/[,{}[\]()]/g, '').trim())
-      .filter(t => {
-        if (t.length < 1) return false;
-        // 단독 알파벳 1~2자 토큰 제거 (l, w, L, W 등 구분자)
-        if (/^[a-zA-Z]{1,2}$/.test(t)) return false;
-        const tl = t.toLowerCase();
-        if (brandSet.has(tl)) { removedBrands.push(t); return false; }
-        if (isExcluded(t)) return false;
-        return true;
-      });
-    const finalText   = finalTokens.join(' ');
-    const charLen     = finalText.length;
-
+    const finalTokens = [...filteredProductTokens, ...aiWords].map(t => t.replace(/[,{}[\]()]/g, '').trim()).filter(t => { if (t.length < 1) return false; if (/^[a-zA-Z]{1,2}$/.test(t)) return false; const tl = t.toLowerCase(); if (brandSet.has(tl)) { removedBrands.push(t); return false; } if (isExcluded(t)) return false; return true; });
+    const finalText = finalTokens.join(' ');
+    const charLen = finalText.length;
     document.getElementById('resultText').textContent = finalText;
     const cc = document.getElementById('charCount');
     cc.textContent = `${charLen}자`;
-    cc.className   = 'char-count' + (charLen > 100 ? ' over' : '');
-
+    cc.className = 'char-count' + (charLen > 100 ? ' over' : '');
     const tagRow = document.getElementById('tagRow');
     tagRow.innerHTML = '';
     filteredProductTokens.forEach(t => addTag(tagRow, t, 'tag-orig'));
-    // 제외된 상품명 토큰은 취소선으로 표시
-    productTokens.filter(t => mainKwTokenSet.has(t.toLowerCase()))
-      .forEach(t => {
-        const span = document.createElement('span');
-        span.className = 'tag tag-orig';
-        span.style.cssText = 'opacity:0.35;text-decoration:line-through;';
-        span.textContent = t;
-        tagRow.appendChild(span);
-      });
-    newMainTokens.forEach(t  => addTag(tagRow, t, 'tag-main'));
-    aiWords.forEach(t        => addTag(tagRow, t, 'tag-ai'));
-
+    productTokens.filter(t => mainKwTokenSet.has(t.toLowerCase())).forEach(t => { const span = document.createElement('span'); span.className = 'tag tag-orig'; span.style.cssText = 'opacity:0.35;text-decoration:line-through;'; span.textContent = t; tagRow.appendChild(span); });
+    newMainTokens.forEach(t => addTag(tagRow, t, 'tag-main'));
+    aiWords.forEach(t => addTag(tagRow, t, 'tag-ai'));
     document.getElementById('resultCard').style.display = 'block';
-    document.getElementById('tagsCard').style.display   = 'block';
-
-    // 브랜드 제거 표시
+    document.getElementById('tagsCard').style.display = 'block';
     const brandBox = document.getElementById('brandRemovedBox');
-    if (removedBrands.length > 0) {
-      document.getElementById('brandRemovedList').textContent = removedBrands.join(', ');
-      brandBox.style.display = 'block';
-    } else {
-      brandBox.style.display = 'none';
-    }
-
-    // ACQ 처리 - 설명/번호/레이블 제거하고 키워드만 추출
+    if (removedBrands.length > 0) { document.getElementById('brandRemovedList').textContent = removedBrands.join(', '); brandBox.style.display = 'block'; } else { brandBox.style.display = 'none'; }
     const raw2 = data2.text || '';
-    const acqWords = raw2
-      .replace(/#\s*acq.*?[\n,]/gi, '')           // "# ACQ 키워드 30개," 줄 제거
-      .replace(/^.*acq.*$/gim, '')                 // ACQ 포함된 줄 전체 제거
-      .replace(/^.*키워드.*개.*$/gim, '')           // "키워드 30개" 포함 줄 제거
-      .split(/[,，\n]/)
-      .map(s => s.trim()
-        .replace(/^[\d\.\-\*#\s]+/, '')
-        .replace(/\(.*?\)/g, '')
-        .replace(/[{}[\]()#]/g, '')
-        .trim()
-      )
-      .filter(s => s.length >= 2 && s.length <= 15)
-      .slice(0, 30);
-
+    const acqWords = raw2.replace(/#\s*acq.*?[\n,]/gi, '').replace(/^.*acq.*$/gim, '').replace(/^.*키워드.*개.*$/gim, '').split(/[,，\n]/).map(s => s.trim().replace(/^[\d\.\-\*#\s]+/, '').replace(/\(.*?\)/g, '').replace(/[{}[\]()#]/g, '').trim()).filter(s => s.length >= 2 && s.length <= 15).slice(0, 30);
     document.getElementById('acqText').textContent = acqWords.join(', ');
     document.getElementById('acqCard').style.display = 'block';
-
     document.getElementById('step2').classList.remove('active');
     document.getElementById('step2').classList.add('done');
     document.getElementById('step3').classList.add('active');
-
-  } catch (e) {
-    showErr(2, '오류: ' + e.message);
-  } finally {
-    setBtnLoading('generateBtn', 'generateBtnLabel', false, '키워드 분석 & 생성');
-  }
+  } catch (e) { showErr(2, '오류: ' + e.message); }
+  finally { setBtnLoading('generateBtn', 'generateBtnLabel', false, '키워드 분석 & 생성'); }
 }
 
-function addTag(parent, text, cls) {
-  const span = document.createElement('span');
-  span.className   = 'tag ' + cls;
-  span.textContent = text;
-  parent.appendChild(span);
-}
-
-function copyAcq() {
-  const text = document.getElementById('acqText').textContent;
-  navigator.clipboard.writeText(text).then(() => {
-    const btn = document.getElementById('acqCopyBtn');
-    btn.textContent = '복사됨 ✓';
-    btn.classList.add('copied');
-    setTimeout(() => { btn.textContent = '복사'; btn.classList.remove('copied'); }, 1800);
-  });
-}
-
-function copyResult() {
-  const text = document.getElementById('resultText').textContent;
-  navigator.clipboard.writeText(text).then(() => {
-    const btn = document.getElementById('copyBtn');
-    btn.textContent = '복사됨 ✓';
-    btn.classList.add('copied');
-    setTimeout(() => { btn.textContent = '복사'; btn.classList.remove('copied'); }, 1800);
-  });
-}
-
-function setBtnLoading(btnId, labelId, on, label) {
-  const btn = document.getElementById(btnId);
-  btn.disabled = on;
-  btn.classList.toggle('loading', on);
-  document.getElementById(labelId).textContent = label;
-}
-
-function setStatus(msg) {
-  const el = document.getElementById('statusBox');
-  el.textContent = msg;
-  el.classList.toggle('visible', !!msg);
-}
-
-function showErr(step, msg) {
-  const el = document.getElementById(`errBox${step}`);
-  el.textContent   = msg;
-  el.style.display = 'block';
-}
-
-function hideErr(step) {
-  document.getElementById(`errBox${step}`).style.display = 'none';
-}
+function addTag(parent, text, cls) { const span = document.createElement('span'); span.className = 'tag ' + cls; span.textContent = text; parent.appendChild(span); }
+function copyAcq() { const text = document.getElementById('acqText').textContent; navigator.clipboard.writeText(text).then(() => { const btn = document.getElementById('acqCopyBtn'); btn.textContent = '복사됨 ✓'; btn.classList.add('copied'); setTimeout(() => { btn.textContent = '복사'; btn.classList.remove('copied'); }, 1800); }); }
+function copyResult() { const text = document.getElementById('resultText').textContent; navigator.clipboard.writeText(text).then(() => { const btn = document.getElementById('copyBtn'); btn.textContent = '복사됨 ✓'; btn.classList.add('copied'); setTimeout(() => { btn.textContent = '복사'; btn.classList.remove('copied'); }, 1800); }); }
+function setBtnLoading(btnId, labelId, on, label) { const btn = document.getElementById(btnId); btn.disabled = on; btn.classList.toggle('loading', on); document.getElementById(labelId).textContent = label; }
+function setStatus(msg) { const el = document.getElementById('statusBox'); el.textContent = msg; el.classList.toggle('visible', !!msg); }
+function showErr(step, msg) { const el = document.getElementById(`errBox${step}`); el.textContent = msg; el.style.display = 'block'; }
+function hideErr(step) { document.getElementById(`errBox${step}`).style.display = 'none'; }
 </script>
 </body>
 </html>
