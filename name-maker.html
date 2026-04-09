@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>상품명 제조기</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: -apple-system, 'Pretendard', sans-serif; background: #f7f8fa; min-height: 100vh; padding: 2rem 1rem; color: #111; }
+.container { max-width: 780px; margin: 0 auto; }
+.header { margin-bottom: 1.5rem; }
+.header h1 { font-size: 20px; font-weight: 700; margin-bottom: 4px; }
+.header p { font-size: 13px; color: #888; }
+.server-status { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; padding: 4px 10px; border-radius: 20px; border: 1px solid #ddd; background: #f8f8f8; color: #888; margin-top: 8px; }
+.server-status.ok { border-color: #c5e8d5; background: #f0faf5; color: #018d4c; }
+.server-status.err { border-color: #fcc; background: #fff5f5; color: #c0392b; }
+.dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+
+.step { background: #fff; border-radius: 14px; border: 1px solid #ebebeb; padding: 1.25rem; margin-bottom: 14px; }
+.step-title { font-size: 13px; font-weight: 700; color: #555; margin-bottom: 12px; display: flex; align-items: center; gap: 8px; }
+.step-num { width: 22px; height: 22px; background: #03c75a; color: #fff; border-radius: 50%; font-size: 11px; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+
+.input-row { display: flex; gap: 8px; margin-bottom: 8px; align-items: center; }
+.input-row input, .input-row select { flex: 1; padding: 9px 12px; border: 1.5px solid #ddd; border-radius: 10px; font-size: 13px; outline: none; }
+.input-row input:focus { border-color: #03c75a; }
+.btn-green { padding: 9px 18px; background: #03c75a; color: #fff; border: none; border-radius: 10px; font-size: 13px; font-weight: 700; cursor: pointer; white-space: nowrap; }
+.btn-green:disabled { background: #bbb; cursor: not-allowed; }
+.btn-gray { padding: 9px 14px; background: #f0f0f0; color: #555; border: none; border-radius: 10px; font-size: 13px; cursor: pointer; }
+
+.hint { font-size: 11px; color: #aaa; margin: 3px 0 8px; }
+.label { font-size: 12px; font-weight: 600; color: #555; margin-bottom: 5px; }
+input[type=text], input[type=password], input[type=number] { padding: 9px 12px; border: 1.5px solid #ddd; border-radius: 10px; font-size: 13px; outline: none; width: 100%; margin-bottom: 8px; }
+input:focus { border-color: #03c75a; }
+
+/* 쇼핑 키워드 체크박스 */
+.kw-grid { display: flex; flex-wrap: wrap; gap: 8px; }
+.kw-chip { display: flex; align-items: center; gap: 5px; padding: 6px 12px; border-radius: 20px; border: 1.5px solid #ddd; background: #f8f8f8; font-size: 12px; cursor: pointer; user-select: none; transition: all 0.15s; }
+.kw-chip:hover { border-color: #03c75a; }
+.kw-chip.active { border-color: #03c75a; background: #f0faf5; color: #018d4c; font-weight: 600; }
+.kw-chip input { display: none; }
+
+/* 수집된 상품명 */
+.name-list { max-height: 200px; overflow-y: auto; border: 1px solid #eee; border-radius: 8px; padding: 8px; }
+.name-item { font-size: 12px; padding: 4px 6px; border-radius: 4px; display: flex; align-items: center; gap: 6px; }
+.name-item:hover { background: #f5f5f5; }
+.name-item input[type=checkbox] { flex-shrink: 0; }
+.name-count { font-size: 11px; color: #aaa; margin-top: 4px; }
+
+/* 결과 */
+.result-card { background: #f0faf5; border: 1.5px solid #c5e8d5; border-radius: 12px; padding: 1.25rem; margin-top: 10px; }
+.result-name { font-size: 15px; font-weight: 700; line-height: 1.6; word-break: break-all; }
+.copy-btn { margin-top: 10px; padding: 7px 14px; background: #018d4c; color: #fff; border: none; border-radius: 8px; font-size: 12px; cursor: pointer; }
+
+.progress-wrap { margin: 8px 0; display: none; }
+.progress-bar { height: 4px; background: #eee; border-radius: 2px; overflow: hidden; }
+.progress-fill { height: 100%; background: #03c75a; transition: width 0.3s; width: 0%; }
+.progress-text { font-size: 11px; color: #888; margin-top: 3px; }
+
+.tag-wrap { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 6px; }
+.tag { font-size: 11px; padding: 3px 8px; border-radius: 12px; background: #f0faf5; color: #018d4c; border: 1px solid #c5e8d5; }
+.attr-row { display: flex; font-size: 12px; padding: 4px 0; border-bottom: 1px solid #f5f5f5; }
+.attr-key { color: #999; width: 100px; flex-shrink: 0; }
+.loading { font-size: 12px; color: #aaa; padding: 8px 0; }
+
+/* API 키 */
+.api-row { display: flex; gap: 8px; align-items: center; margin-bottom: 12px; }
+.api-row input { flex: 1; }
+.api-saved { font-size: 11px; color: #018d4c; display: none; }
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <h1>상품명 제조기</h1>
+    <p>경쟁사 상품명 + 내 상품 정보로 최적화된 상품명 생성</p>
+    <div class="server-status" id="serverStatus">
+      <div class="dot"></div><span>서버 확인 중...</span>
+    </div>
+  </div>
+
+  <!-- API 키 -->
+  <div class="step" style="background:#f8f8f8;">
+    <div class="step-title" style="margin-bottom:8px;">⚙ 설정</div>
+    <div class="label">Anthropic API 키</div>
+    <div class="api-row">
+      <input type="password" id="apiKeyInput" placeholder="sk-ant-..." />
+      <button class="btn-gray" onclick="saveApiKey()">저장</button>
+      <span class="api-saved" id="apiSaved">✓</span>
+    </div>
+    <div class="label">네이버 Client ID</div>
+    <input type="text" id="naverClientId" placeholder="네이버 개발자센터 Client ID" style="margin-bottom:8px;" />
+    <div class="label">네이버 Client Secret</div>
+    <input type="password" id="naverClientSecret" placeholder="네이버 개발자센터 Client Secret" />
+    <button class="btn-gray" onclick="saveNaverKey()" style="margin-top:4px;">네이버 키 저장</button>
+    <span class="api-saved" id="naverSaved">✓</span>
+  </div>
+
+  <!-- Step 1: 메인키워드 + 상품명 수집 -->
+  <div class="step">
+    <div class="step-title"><span class="step-num">1</span> 메인키워드로 경쟁사 상품명 수집</div>
+    <div class="input-row">
+      <input type="text" id="mainKw" placeholder="메인키워드 (예: 도라지정과)" />
+      <input type="number" id="collectCount" value="30" min="1" max="300" style="flex:0 0 80px;" />
+      <button class="btn-green" id="collectBtn" onclick="collectNames()">수집</button>
+    </div>
+    <div class="hint">* 수집 갯수: 1~300개</div>
+    <div class="input-row" style="align-items:center; gap:10px; margin-bottom:4px;">
+      <span style="font-size:12px; color:#555; white-space:nowrap;">경쟁사 상품명에서 추가할 키워드 수:</span>
+      <input type="number" id="keywordExtractCount" value="10" min="1" max="50" style="flex:0 0 60px;" />
+      <span style="font-size:11px; color:#aaa;">개</span>
+    </div>
+    <div class="progress-wrap" id="collectProgress">
+      <div class="progress-bar"><div class="progress-fill" id="collectFill"></div></div>
+      <div class="progress-text" id="collectText">수집 중...</div>
+    </div>
+    <div id="nameListWrap" style="display:none;">
+      <div class="name-count" id="nameCount"></div>
+      <div class="name-list" id="nameList"></div>
+      <div style="margin-top:6px; display:flex; gap:6px;">
+        <button class="btn-gray" onclick="checkAll(true)" style="font-size:11px; padding:4px 10px;">전체선택</button>
+        <button class="btn-gray" onclick="checkAll(false)" style="font-size:11px; padding:4px 10px;">전체해제</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Step 2: 내 상품 정보 -->
+  <div class="step">
+    <div class="step-title"><span class="step-num">2</span> 내 상품 태그·속성 추출</div>
+    <div class="input-row">
+      <input type="text" id="myName" placeholder="내 상품명" />
+    </div>
+    <div class="input-row">
+      <input type="text" id="myNvmid" placeholder="nvmid (선택)" />
+      <button class="btn-green" id="extractBtn" onclick="extractInfo()">추출</button>
+    </div>
+    <div id="extractLoading" class="loading" style="display:none;">추출 중...</div>
+    <div id="extractResult"></div>
+  </div>
+
+  <!-- Step 3: 쇼핑 키워드 -->
+  <div class="step">
+    <div class="step-title"><span class="step-num">3</span> 추가 쇼핑 키워드</div>
+    <div class="kw-grid" id="kwGrid">
+      <label class="kw-chip"><input type="checkbox" value="인기" onchange="toggleChip(this)">인기</label>
+      <label class="kw-chip"><input type="checkbox" value="추천" onchange="toggleChip(this)">추천</label>
+      <label class="kw-chip"><input type="checkbox" value="최저가" onchange="toggleChip(this)">최저가</label>
+      <label class="kw-chip"><input type="checkbox" value="할인" onchange="toggleChip(this)">할인</label>
+      <label class="kw-chip"><input type="checkbox" value="무료배송" onchange="toggleChip(this)">무료배송</label>
+      <label class="kw-chip"><input type="checkbox" value="당일배송" onchange="toggleChip(this)">당일배송</label>
+      <label class="kw-chip"><input type="checkbox" value="구매" onchange="toggleChip(this)">구매</label>
+      <label class="kw-chip"><input type="checkbox" value="선물용" onchange="toggleChip(this)">선물용</label>
+      <label class="kw-chip"><input type="checkbox" value="가성비" onchange="toggleChip(this)">가성비</label>
+      <label class="kw-chip"><input type="checkbox" value="국내산" onchange="toggleChip(this)">국내산</label>
+      <label class="kw-chip"><input type="checkbox" value="정품" onchange="toggleChip(this)">정품</label>
+      <label class="kw-chip"><input type="checkbox" value="신상" onchange="toggleChip(this)">신상</label>
+    </div>
+  </div>
+
+  <!-- Step 4: 최종 상품명 생성 -->
+  <div class="step">
+    <div class="step-title"><span class="step-num">4</span> 최종 상품명 생성</div>
+    <div class="input-row" style="margin-bottom:10px;">
+      <label style="font-size:12px;color:#555;white-space:nowrap;">경쟁사 키워드 추출 수:</label>
+      <input type="number" id="kwExtractCount" value="10" min="1" max="30" style="flex:0 0 70px;" />
+      <span style="font-size:11px;color:#aaa;">개 (경쟁사 상품명에서 추출할 키워드 수)</span>
+    </div>
+    <button class="btn-green" id="generateBtn" onclick="generateName()" style="width:100%;">상품명 생성</button>
+    <div id="generateLoading" class="loading" style="display:none; margin-top:8px;">AI가 상품명 생성 중...</div>
+    <div id="generateResult"></div>
+  </div>
+</div>
+
+<script>
+const API = 'https://undeposable-inarguably-renna.ngrok-free.dev';
+let extractedTags = [];
+let extractedAttrs = {};
+let collectedNames = [];
+
+function saveApiKey() {
+  localStorage.setItem('anthropic_api_key', document.getElementById('apiKeyInput').value.trim());
+  const s = document.getElementById('apiSaved');
+  s.style.display = 'inline';
+  setTimeout(() => s.style.display = 'none', 2000);
+}
+
+function saveNaverKey() {
+  localStorage.setItem('naver_client_id', document.getElementById('naverClientId').value.trim());
+  localStorage.setItem('naver_client_secret', document.getElementById('naverClientSecret').value.trim());
+  const s = document.getElementById('naverSaved');
+  s.style.display = 'inline';
+  setTimeout(() => s.style.display = 'none', 2000);
+}
+
+function getApiKey() { return localStorage.getItem('anthropic_api_key') || ''; }
+function getNaverClientId() { return localStorage.getItem('naver_client_id') || ''; }
+function getNaverClientSecret() { return localStorage.getItem('naver_client_secret') || ''; }
+
+window.addEventListener('DOMContentLoaded', () => {
+  const k = getApiKey();
+  if (k) document.getElementById('apiKeyInput').value = k;
+
+  // 엔터키 이벤트
+  document.getElementById('mainKw').addEventListener('keydown', e => { if (e.key === 'Enter') collectNames(); });
+  document.getElementById('myName').addEventListener('keydown', e => { if (e.key === 'Enter') extractInfo(); });
+  document.getElementById('myNvmid').addEventListener('keydown', e => { if (e.key === 'Enter') extractInfo(); });
+});
+
+async function checkServer() {
+  const el = document.getElementById('serverStatus');
+  try {
+    const res = await fetch(API + '/health', { headers: { 'ngrok-skip-browser-warning': 'true' } });
+    const data = await res.json();
+    if (data.status === 'ok') {
+      el.className = 'server-status ok';
+      el.innerHTML = '<div class="dot"></div><span>서버 연결됨</span>';
+      return;
+    }
+  } catch {}
+  el.className = 'server-status err';
+  el.innerHTML = '<div class="dot"></div><span>서버 오프라인</span>';
+}
+checkServer();
+setInterval(checkServer, 10000);
+
+function toggleChip(el) {
+  el.closest('.kw-chip').classList.toggle('active', el.checked);
+}
+
+// Step 1: 수집
+async function collectNames() {
+  const kw = document.getElementById('mainKw').value.trim();
+  const count = parseInt(document.getElementById('collectCount').value) || 30;
+  if (!kw) return alert('메인키워드를 입력해주세요');
+
+  const btn = document.getElementById('collectBtn');
+  btn.disabled = true; btn.textContent = '수집 중...';
+  document.getElementById('collectProgress').style.display = 'block';
+  document.getElementById('collectFill').style.width = '30%';
+  document.getElementById('collectText').textContent = '상품명 수집 중...';
+  document.getElementById('nameListWrap').style.display = 'none';
+
+  try {
+    const params = new URLSearchParams({ keyword: kw, count });
+    const res = await fetch(`${API}/collect?${params}`, {
+      headers: { 'ngrok-skip-browser-warning': 'true' }
+    });
+    const d = await res.json();
+    if (d.status === 'error') throw new Error(d.error);
+    collectedNames = d.names || [];
+
+    document.getElementById('collectFill').style.width = '100%';
+    document.getElementById('collectText').textContent = `${collectedNames.length}개 수집 완료`;
+    document.getElementById('nameCount').textContent = `총 ${collectedNames.length}개 수집됨`;
+    document.getElementById('nameList').innerHTML = collectedNames.map((n, i) =>
+      `<div class="name-item">
+        <input type="checkbox" id="name_${i}" checked>
+        <label for="name_${i}" style="cursor:pointer;font-size:12px;">${n}</label>
+      </div>`
+    ).join('');
+    document.getElementById('nameListWrap').style.display = 'block';
+  } catch (e) {
+    alert('수집 실패: ' + e.message);
+  } finally {
+    btn.disabled = false; btn.textContent = '수집';
+  }
+}
+
+function checkAll(checked) {
+  document.querySelectorAll('#nameList input[type=checkbox]').forEach(cb => cb.checked = checked);
+}
+
+function getCheckedNames() {
+  return [...document.querySelectorAll('#nameList input[type=checkbox]')]
+    .filter(cb => cb.checked)
+    .map(cb => collectedNames[parseInt(cb.id.replace('name_', ''))]);
+}
+
+// Step 2: 추출
+async function extractInfo() {
+  const myName = document.getElementById('myName').value.trim();
+  const nvmid = document.getElementById('myNvmid').value.trim();
+  if (!myName) return alert('상품명을 입력해주세요');
+
+  const btn = document.getElementById('extractBtn');
+  btn.disabled = true; btn.textContent = '추출 중...';
+  document.getElementById('extractLoading').style.display = 'block';
+  document.getElementById('extractResult').innerHTML = '';
+
+  try {
+    const params = new URLSearchParams({ query: myName });
+    if (nvmid) params.append('nvmid', nvmid);
+    params.append('apiKey', getApiKey());
+    const res = await fetch(`${API}/search?${params}`, { headers: { 'ngrok-skip-browser-warning': 'true' } });
+    const d = await res.json();
+
+    if (d.status === 'success' || d.status === 'noAttributes') {
+      extractedTags = d.tags || [];
+      extractedAttrs = d.attributes || {};
+
+      let html = '';
+      if (Object.keys(extractedAttrs).length) {
+        html += `<div style="margin-top:8px;"><div class="label">속성</div>
+          ${Object.entries(extractedAttrs).map(([k,v])=>`<div class="attr-row"><span class="attr-key">${k}</span><span>${v}</span></div>`).join('')}
+        </div>`;
+      }
+      if (extractedTags.length) {
+        html += `<div style="margin-top:8px;"><div class="label">태그</div>
+          <div class="tag-wrap">${extractedTags.map(t=>`<span class="tag">#${t}</span>`).join('')}</div>
+        </div>`;
+      }
+      if (!html) html = '<div style="font-size:12px;color:#aaa;margin-top:8px;">속성/태그 없음</div>';
+      document.getElementById('extractResult').innerHTML = html;
+    } else {
+      document.getElementById('extractResult').innerHTML = `<div style="font-size:12px;color:#c0392b;margin-top:8px;">${d.error || d.status}</div>`;
+    }
+  } catch (e) {
+    document.getElementById('extractResult').innerHTML = `<div style="font-size:12px;color:#c0392b;margin-top:8px;">오류: ${e.message}</div>`;
+  } finally {
+    btn.disabled = false; btn.textContent = '추출';
+    document.getElementById('extractLoading').style.display = 'none';
+  }
+}
+
+// Step 4: 생성
+async function generateName() {
+  const apiKey = getApiKey();
+  const mainKw = document.getElementById('mainKw').value.trim();
+  const myName = document.getElementById('myName').value.trim();
+  if (!apiKey) return alert('API 키를 입력해주세요');
+  if (!mainKw) return alert('메인키워드를 입력해주세요');
+
+  const checkedNames = getCheckedNames();
+  const shoppingKws = [...document.querySelectorAll('#kwGrid input:checked')].map(cb => cb.value);
+  const kwExtractCount = parseInt(document.getElementById('keywordExtractCount').value) || 10;
+
+  const kwExtractCount = document.getElementById('kwExtractCount').value || 10;
+  const btn = document.getElementById('generateBtn');
+  btn.disabled = true; btn.textContent = '생성 중...';
+  document.getElementById('generateLoading').style.display = 'block';
+  document.getElementById('generateResult').innerHTML = '';
+
+  try {
+    const params = new URLSearchParams({ apiKey, mainKw, myName, kwExtractCount });
+    checkedNames.forEach(n => params.append('collected', n));
+    Object.entries(extractedAttrs).forEach(([k,v]) => params.append('attr', `${k}: ${v}`));
+    extractedTags.forEach(t => params.append('tag', t));
+    shoppingKws.forEach(k => params.append('shoppingKw', k));
+
+    const res = await fetch(`${API}/generate?${params}`, { headers: { 'ngrok-skip-browser-warning': 'true' } });
+    const d = await res.json();
+
+    if (d.status === 'ok') {
+      document.getElementById('generateResult').innerHTML = `
+        <div class="result-card">
+          <div class="label" style="margin-bottom:6px;">생성된 상품명</div>
+          <div class="result-name" id="resultName">${d.name}</div>
+          <button class="copy-btn" onclick="copyText('${d.name.replace(/'/g,"\\'")}', this)">복사</button>
+        </div>`;
+    } else {
+      document.getElementById('generateResult').innerHTML = `<div style="font-size:12px;color:#c0392b;margin-top:8px;">오류: ${d.error}</div>`;
+    }
+  } catch (e) {
+    document.getElementById('generateResult').innerHTML = `<div style="font-size:12px;color:#c0392b;margin-top:8px;">오류: ${e.message}</div>`;
+  } finally {
+    btn.disabled = false; btn.textContent = '상품명 생성';
+    document.getElementById('generateLoading').style.display = 'none';
+  }
+}
+
+function copyText(text, btn) {
+  navigator.clipboard.writeText(text).then(() => {
+    const orig = btn.textContent;
+    btn.textContent = '복사됨!';
+    setTimeout(() => btn.textContent = orig, 1500);
+  });
+}
+</script>
+</body>
+</html>
