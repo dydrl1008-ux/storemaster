@@ -338,13 +338,22 @@ async function generateName() {
   document.getElementById('generateResult').innerHTML = '';
 
   try {
-    const params = new URLSearchParams({ apiKey, mainKw, myName, kwExtractCount });
-    checkedNames.forEach(n => params.append('collected', n));
-    Object.entries(extractedAttrs).forEach(([k,v]) => params.append('attr', `${k}: ${v}`));
-    extractedTags.forEach(t => params.append('tag', t));
-    shoppingKws.forEach(k => params.append('shoppingKw', k));
+    const body = {
+      apiKey, mainKw, myName, kwExtractCount,
+      collected: checkedNames,
+      attrs: Object.entries(extractedAttrs).map(([k,v]) => `${k}: ${v}`),
+      tags: extractedTags,
+      shoppingKws
+    };
 
-    const res = await fetch(`${API}/generate?${params}`, { headers: { 'ngrok-skip-browser-warning': 'true' } });
+    const res = await fetch(`${API}/generate`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'ngrok-skip-browser-warning': 'true'
+      },
+      body: JSON.stringify(body)
+    });
     const d = await res.json();
 
     if (d.status === 'ok') {
