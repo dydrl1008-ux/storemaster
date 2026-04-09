@@ -168,6 +168,25 @@ input:focus { border-color: #03c75a; }
     <div id="generateLoading" class="loading" style="display:none; margin-top:8px;">AI가 상품명 생성 중...</div>
     <div id="generateResult"></div>
   </div>
+
+  <!-- Step 5: 순위 체크 -->
+  <div class="step">
+    <div class="step-title"><span class="step-num">5</span> 키워드 순위 체크</div>
+    <div class="hint">최종 상품명 단어 + 메인키워드 조합으로 내 상품이 4위 이내인지 체크</div>
+    <div class="input-row" style="margin-bottom:8px; flex-wrap:wrap; gap:8px;">
+      <label style="font-size:12px;color:#555;">단어 조합:</label>
+      <label class="kw-chip" id="combo2chip"><input type="checkbox" id="combo2" value="2" onchange="toggleChip(this)" checked>2단어</label>
+      <label class="kw-chip" id="combo3chip"><input type="checkbox" id="combo3" value="3" onchange="toggleChip(this)" checked>3단어</label>
+      <label class="kw-chip" id="combo4chip"><input type="checkbox" id="combo4" value="4" onchange="toggleChip(this)">4단어</label>
+    </div>
+    <button class="btn-green" id="rankCheckBtn" onclick="checkRanks()" style="width:100%;">순위 체크</button>
+    <div id="rankLoading" class="loading" style="display:none; margin-top:8px;">순위 체크 중...</div>
+    <div class="progress-wrap" id="rankProgress">
+      <div class="progress-bar"><div class="progress-fill" id="rankFill"></div></div>
+      <div class="progress-text" id="rankText"></div>
+    </div>
+    <div id="rankResult" style="margin-top:10px;"></div>
+  </div>
 </div>
 
 <script>
@@ -371,6 +390,99 @@ async function generateName() {
   } finally {
     btn.disabled = false; btn.textContent = '상품명 생성';
     document.getElementById('generateLoading').style.display = 'none';
+  }
+}
+
+async function checkRanks() {
+  const nvmid = document.getElementById('myNvmid').value.trim();
+  const mainKw = document.getElementById('mainKw').value.trim();
+  const generatedName = document.getElementById('resultName')?.textContent?.trim();
+
+  if (!nvmid) return alert('내 상품 nvmid를 입력해주세요 (2번에서 추출 필요)');
+  if (!generatedName) return alert('먼저 4번에서 상품명을 생성해주세요');
+
+  // 선택된 조합 크기
+  const comboSizes = [];
+  if (document.getElementById('combo2').checked) comboSizes.push(2);
+  if (document.getElementById('combo3').checked) comboSizes.push(3);
+  if (document.getElementById('combo4').checked) comboSizes.push(4);
+  if (!comboSizes.length) return alert('단어 조합을 선택해주세요');
+
+  // 상품명에서 단어 추출 (메인키워드 포함)
+  const nameWords = generatedName.split(/\s+/).filter(w => w.length >= 2);
+  if (!nameWords.includes(mainKw)) nameWords.unshift(mainKw);
+
+  // 조합 생성 (메인키워드 필수 포함)
+  const combos = new Set();
+  for (const size of comboSizes) {
+    for (let i = 0; i < nameWords.length; i++) {
+      for (let j = i + 1; j < nameWords.length; j++) {
+        if (size === 2) {
+          if (nameWords[i] === mainKw || nameWords[j] === mainKw) {
+            combos.add([nameWords[i], nameWords[j]].join(' '));
+          }
+        } else if (size === 3) {
+          for (let k = j + 1; k < nameWords.length; k++) {
+            if (nameWords[i] === mainKw || nameWords[j] === mainKw || nameWords[k] === mainKw) {
+              combos.add([nameWords[i], nameWords[j], nameWords[k]].join(' '));
+            }
+          }
+        } else if (size === 4) {
+          for (let k = j + 1; k < nameWords.length; k++) {
+            for (let l = k + 1; l < nameWords.length; l++) {
+              if ([nameWords[i], nameWords[j], nameWords[k], nameWords[l]].includes(mainKw)) {
+                combos.add([nameWords[i], nameWords[j], nameWords[k], nameWords[l]].join(' '));
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+
+  const comboList = [...combos].slice(0, 30); // 최대 30개
+  if (!comboList.length) return alert('조합을 생성할 수 없습니다');
+
+  const btn = document.getElementById('rankCheckBtn');
+  btn.disabled = true; btn.textContent = '체크 중...';
+  document.getElementById('rankLoading').style.display = 'block';
+  document.getElementById('rankProgress').style.display = 'block';
+  document.getElementById('rankResult').innerHTML = '';
+  document.getElementById('rankFill').style.width = '0%';
+  document.getElementById('rankText').textContent = `0 / ${comboList.length}`;
+
+  try {
+    const res = await fetch(`${API}/rank-check`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'ngrok-skip-browser-warning': 'true' },
+      body: JSON.stringify({ nvmid, combos: comboList })
+    });
+    const d = await res.json();
+
+    if (d.status === 'ok') {
+      const top4 = d.results.filter(r => r.inTop4);
+      const html = d.results.map(r => {
+        const color = r.rank === 0 ? '#bbb' : r.inTop4 ? '#018d4c' : '#c0392b';
+        const badge = r.rank === 0 ? '미검출' : r.inTop4 ? `✅ ${r.rank}위` : `❌ ${r.rank}위`;
+        return `<div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid #f5f5f5;font-size:12px;">
+          <span>${r.keyword}</span>
+          <span style="color:${color};font-weight:700;">${badge}</span>
+        </div>`;
+      }).join('');
+      document.getElementById('rankResult').innerHTML = `
+        <div style="font-size:12px;font-weight:700;margin-bottom:8px;">
+          4위 이내: ${top4.length}/${d.results.length}개
+        </div>
+        ${html}`;
+    } else {
+      document.getElementById('rankResult').innerHTML = `<div style="color:#c0392b;font-size:12px;">오류: ${d.error}</div>`;
+    }
+  } catch (e) {
+    document.getElementById('rankResult').innerHTML = `<div style="color:#c0392b;font-size:12px;">오류: ${e.message}</div>`;
+  } finally {
+    btn.disabled = false; btn.textContent = '순위 체크';
+    document.getElementById('rankLoading').style.display = 'none';
+    document.getElementById('rankFill').style.width = '100%';
   }
 }
 
