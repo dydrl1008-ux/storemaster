@@ -478,23 +478,27 @@ async function checkRanks() {
       done += batch.length;
       document.getElementById('rankFill').style.width = `${(done / comboList.length * 100).toFixed(0)}%`;
       document.getElementById('rankText').textContent = `${done} / ${comboList.length}`;
+      if (i + BATCH < comboList.length) await new Promise(r => setTimeout(r, 500));
     }
 
     const top4 = allResults.filter(r => r.inTop4);
+    const errors = allResults.filter(r => r.rank === -1);
     const html = allResults.map(r => {
-      const color = r.rank === 0 ? '#bbb' : r.inTop4 ? '#018d4c' : '#c0392b';
-      const badge = r.rank === 0 ? '미검출' : r.inTop4 ? `✅ ${r.rank}위` : `❌ ${r.rank}위`;
+      const color = r.rank === -1 ? '#e67e22' : r.rank === 0 ? '#bbb' : r.inTop4 ? '#018d4c' : '#c0392b';
+      const badge = r.rank === -1 ? '⚠️ 오류' : r.rank === 0 ? '미검출' : r.inTop4 ? `✅ ${r.rank}위` : `❌ ${r.rank}위`;
       return `<div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid #f5f5f5;font-size:12px;">
         <span>${r.keyword}</span>
         <span style="color:${color};font-weight:700;">${badge}</span>
       </div>`;
     }).join('');
 
-    // 노출 키워드만 정리
     const top4Keywords = top4.map(r => r.keyword).join('\n');
 
     document.getElementById('rankResult').innerHTML = `
-      <div style="font-size:12px;font-weight:700;margin-bottom:8px;">4위 이내: ${top4.length}/${allResults.length}개</div>
+      <div style="font-size:12px;font-weight:700;margin-bottom:8px;">
+        4위 이내: ${top4.length}/${allResults.length}개
+        ${errors.length > 0 ? `<button onclick="retryErrors()" style="margin-left:10px;padding:3px 10px;background:#e67e22;color:#fff;border:none;border-radius:6px;font-size:11px;cursor:pointer;">⚠️ 오류 ${errors.length}개 재시도</button>` : ''}
+      </div>
       ${html}
       <div style="margin-top:16px;padding:12px;background:#f0faf5;border:1.5px solid #c5e8d5;border-radius:10px;">
         <div style="font-size:12px;font-weight:700;color:#018d4c;margin-bottom:6px;">✅ 노출 키워드 정리 (${top4.length}개)</div>
@@ -508,6 +512,43 @@ async function checkRanks() {
     document.getElementById('rankLoading').style.display = 'none';
     document.getElementById('rankFill').style.width = '100%';
   }
+}
+
+async function retryErrors() {
+  const nvmid = document.getElementById('myNvmid').value.trim();
+  const resultDivs = document.querySelectorAll('#rankResult > div:not(:last-child) > div');
+  // 오류난 키워드 수집
+  const errorKeywords = [];
+  document.querySelectorAll('#rankResult > div').forEach(div => {
+    const spans = div.querySelectorAll('span');
+    if (spans.length >= 2 && spans[1].textContent.includes('오류')) {
+      errorKeywords.push(spans[0].textContent.trim());
+    }
+  });
+  if (!errorKeywords.length) return;
+
+  try {
+    const res = await fetch(`${API}/rank-check`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'ngrok-skip-browser-warning': 'true' },
+      body: JSON.stringify({ nvmid, combos: errorKeywords })
+    });
+    const d = await res.json();
+    if (d.status !== 'ok') return;
+
+    // 결과 업데이트
+    d.results.forEach(r => {
+      document.querySelectorAll('#rankResult > div').forEach(div => {
+        const spans = div.querySelectorAll('span');
+        if (spans.length >= 2 && spans[0].textContent.trim() === r.keyword) {
+          const color = r.rank === -1 ? '#e67e22' : r.rank === 0 ? '#bbb' : r.inTop4 ? '#018d4c' : '#c0392b';
+          const badge = r.rank === -1 ? '⚠️ 오류' : r.rank === 0 ? '미검출' : r.inTop4 ? `✅ ${r.rank}위` : `❌ ${r.rank}위`;
+          spans[1].style.color = color;
+          spans[1].textContent = badge;
+        }
+      });
+    });
+  } catch(e) { alert('재시도 오류: ' + e.message); }
 }
 
 function copyText(text, btn) {
