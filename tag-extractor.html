@@ -3,11 +3,11 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>상품 태그·속성 추출기</title>
+<title>상품명 제조기</title>
 <style>
 * { box-sizing: border-box; margin: 0; padding: 0; }
 body { font-family: -apple-system, 'Pretendard', sans-serif; background: #f7f8fa; min-height: 100vh; padding: 2rem 1rem; color: #111; }
-.container { max-width: 700px; margin: 0 auto; }
+.container { max-width: 780px; margin: 0 auto; }
 .header { margin-bottom: 1.5rem; }
 .header h1 { font-size: 20px; font-weight: 700; margin-bottom: 4px; }
 .header p { font-size: 13px; color: #888; }
@@ -15,186 +15,597 @@ body { font-family: -apple-system, 'Pretendard', sans-serif; background: #f7f8fa
 .server-status.ok { border-color: #c5e8d5; background: #f0faf5; color: #018d4c; }
 .server-status.err { border-color: #fcc; background: #fff5f5; color: #c0392b; }
 .dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
-.tabs { display: flex; gap: 4px; margin-bottom: 1rem; }
-.tab { padding: 7px 16px; border-radius: 8px; border: 1px solid #ddd; background: #f8f8f8; font-size: 13px; cursor: pointer; color: #666; }
-.tab.active { background: #03c75a; color: #fff; border-color: #03c75a; }
-.input-row { display: flex; gap: 8px; margin-bottom: 8px; }
-.input-row input { flex: 1; padding: 10px 14px; border: 1.5px solid #ddd; border-radius: 10px; font-size: 14px; outline: none; }
+
+.step { background: #fff; border-radius: 14px; border: 1px solid #ebebeb; padding: 1.25rem; margin-bottom: 14px; }
+.step-title { font-size: 13px; font-weight: 700; color: #555; margin-bottom: 12px; display: flex; align-items: center; gap: 8px; }
+.step-num { width: 22px; height: 22px; background: #03c75a; color: #fff; border-radius: 50%; font-size: 11px; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+
+.input-row { display: flex; gap: 8px; margin-bottom: 8px; align-items: center; }
+.input-row input, .input-row select { flex: 1; padding: 9px 12px; border: 1.5px solid #ddd; border-radius: 10px; font-size: 13px; outline: none; }
 .input-row input:focus { border-color: #03c75a; }
-.input-row input.required { border-color: #03c75a; }
-.btn-green { padding: 10px 20px; background: #03c75a; color: #fff; border: none; border-radius: 10px; font-size: 14px; font-weight: 700; cursor: pointer; white-space: nowrap; }
+.btn-green { padding: 9px 18px; background: #03c75a; color: #fff; border: none; border-radius: 10px; font-size: 13px; font-weight: 700; cursor: pointer; white-space: nowrap; }
 .btn-green:disabled { background: #bbb; cursor: not-allowed; }
-.btn-gray { padding: 10px 16px; background: #f0f0f0; color: #555; border: none; border-radius: 10px; font-size: 13px; font-weight: 600; cursor: pointer; }
-.card { background: #fff; border-radius: 14px; border: 1px solid #ebebeb; padding: 1.25rem; margin-bottom: 12px; }
-.card-label { font-size: 11px; font-weight: 700; color: #aaa; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 8px; display: flex; align-items: center; }
-.copy-btn { margin-left: auto; font-size: 11px; padding: 3px 9px; border-radius: 5px; border: 1px solid #ddd; background: #f8f8f8; color: #666; cursor: pointer; }
-.prod-name { font-size: 15px; font-weight: 700; }
-.tag-wrap { display: flex; flex-wrap: wrap; gap: 6px; }
-.tag { font-size: 12px; padding: 4px 10px; border-radius: 20px; background: #f0faf5; color: #018d4c; border: 1px solid #c5e8d5; font-weight: 500; }
-.attr-row { display: flex; font-size: 13px; padding: 6px 0; border-bottom: 1px solid #f2f2f2; }
-.attr-row:last-child { border-bottom: none; }
-.attr-key { color: #999; width: 120px; flex-shrink: 0; }
-.attr-val { font-weight: 600; }
-.completed { font-size: 14px; font-weight: 600; line-height: 1.5; word-break: break-all; }
-.badge-1 { color: #018d4c; }
-.badge-2 { color: #1a73e8; }
-.badge-3 { color: #9c27b0; }
-.file-area { border: 2px dashed #ddd; border-radius: 10px; padding: 1.5rem; text-align: center; cursor: pointer; margin-bottom: 10px; }
-.file-area:hover { border-color: #03c75a; background: #f0faf5; }
-.file-area input { display: none; }
-.file-area p { font-size: 13px; color: #888; }
-textarea { width: 100%; height: 100px; padding: 10px 14px; border: 1.5px solid #ddd; border-radius: 10px; font-size: 13px; resize: vertical; outline: none; font-family: inherit; }
-textarea:focus { border-color: #03c75a; }
-.hint { font-size: 11px; color: #aaa; margin: 4px 0 10px; }
-.btn-row { display: flex; gap: 8px; margin-bottom: 12px; }
-.progress-wrap { margin-bottom: 12px; display: none; }
-.progress-bar { height: 5px; background: #eee; border-radius: 3px; overflow: hidden; }
+.btn-gray { padding: 9px 14px; background: #f0f0f0; color: #555; border: none; border-radius: 10px; font-size: 13px; cursor: pointer; }
+
+.hint { font-size: 11px; color: #aaa; margin: 3px 0 8px; }
+.label { font-size: 12px; font-weight: 600; color: #555; margin-bottom: 5px; }
+input[type=text], input[type=password], input[type=number] { padding: 9px 12px; border: 1.5px solid #ddd; border-radius: 10px; font-size: 13px; outline: none; width: 100%; margin-bottom: 8px; }
+input:focus { border-color: #03c75a; }
+
+/* 쇼핑 키워드 체크박스 */
+.kw-grid { display: flex; flex-wrap: wrap; gap: 8px; }
+.kw-chip { display: flex; align-items: center; gap: 5px; padding: 6px 12px; border-radius: 20px; border: 1.5px solid #ddd; background: #f8f8f8; font-size: 12px; cursor: pointer; user-select: none; transition: all 0.15s; }
+.kw-chip:hover { border-color: #03c75a; }
+.kw-chip.active { border-color: #03c75a; background: #f0faf5; color: #018d4c; font-weight: 600; }
+.kw-chip input { display: none; }
+
+/* 수집된 상품명 */
+.name-list { max-height: 200px; overflow-y: auto; border: 1px solid #eee; border-radius: 8px; padding: 8px; }
+.name-item { font-size: 12px; padding: 4px 6px; border-radius: 4px; display: flex; align-items: center; gap: 6px; }
+.name-item:hover { background: #f5f5f5; }
+.name-item input[type=checkbox] { flex-shrink: 0; }
+.name-count { font-size: 11px; color: #aaa; margin-top: 4px; }
+
+/* 결과 */
+.result-card { background: #f0faf5; border: 1.5px solid #c5e8d5; border-radius: 12px; padding: 1.25rem; margin-top: 10px; }
+.result-name { font-size: 15px; font-weight: 700; line-height: 1.6; word-break: break-all; }
+.copy-btn { margin-top: 10px; padding: 7px 14px; background: #018d4c; color: #fff; border: none; border-radius: 8px; font-size: 12px; cursor: pointer; }
+
+.progress-wrap { margin: 8px 0; display: none; }
+.progress-bar { height: 4px; background: #eee; border-radius: 2px; overflow: hidden; }
 .progress-fill { height: 100%; background: #03c75a; transition: width 0.3s; width: 0%; }
-.progress-text { font-size: 12px; color: #888; margin-top: 4px; }
-.result-list { max-height: 400px; overflow-y: auto; }
-.result-item { background: #fff; border: 1px solid #ebebeb; border-radius: 10px; padding: 12px; margin-bottom: 8px; }
-.ri-name { font-size: 13px; font-weight: 700; margin-bottom: 3px; }
-.ri-comp { font-size: 12px; font-weight: 600; margin-top: 4px; }
-.ri-err { font-size: 11px; color: #c0392b; margin-top: 4px; }
-.sbadge { display: inline-block; font-size: 10px; padding: 1px 7px; border-radius: 3px; margin-left: 6px; }
-.b-ok { background: #f0faf5; color: #018d4c; }
-.b-err { background: #fff0f0; color: #c0392b; }
-.b-nf { background: #fff8f0; color: #c67c00; }
-.b-mis { background: #f0f0ff; color: #5050cc; }
-.b-na { background: #f5f5f5; color: #888; }
-.error-box { background: #fff5f5; border: 1px solid #fcc; border-radius: 10px; padding: 12px; font-size: 13px; color: #c0392b; margin-bottom: 12px; }
-.loading { text-align: center; padding: 1.5rem; font-size: 13px; color: #aaa; }
-.empty { font-size: 13px; color: #bbb; text-align: center; padding: 20px; }
-.required-kw { background: #fff; border: 1.5px solid #ddd; border-radius: 10px; padding: 10px 14px; font-size: 13px; width: 100%; margin-bottom: 8px; outline: none; }
-.required-kw:focus { border-color: #ff9800; }
-.kw-label { font-size: 11px; color: #ff9800; font-weight: 700; margin-bottom: 4px; }
+.progress-text { font-size: 11px; color: #888; margin-top: 3px; }
+
+.tag-wrap { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 6px; }
+.tag { font-size: 11px; padding: 3px 8px; border-radius: 12px; background: #f0faf5; color: #018d4c; border: 1px solid #c5e8d5; }
+.attr-row { display: flex; font-size: 12px; padding: 4px 0; border-bottom: 1px solid #f5f5f5; }
+.attr-key { color: #999; width: 100px; flex-shrink: 0; }
+.loading { font-size: 12px; color: #aaa; padding: 8px 0; }
+
+/* API 키 */
+.api-row { display: flex; gap: 8px; align-items: center; margin-bottom: 12px; }
+.api-row input { flex: 1; }
+.api-saved { font-size: 11px; color: #018d4c; display: none; }
 </style>
 </head>
 <body>
 <div class="container">
   <div class="header">
-    <h1>상품 태그·속성 추출기</h1>
-    <p>네이버 쇼핑 상품의 태그와 속성을 자동으로 추출합니다</p>
+    <h1>상품명 제조기</h1>
+    <p>경쟁사 상품명 + 내 상품 정보로 최적화된 상품명 생성</p>
     <div class="server-status" id="serverStatus">
       <div class="dot"></div><span>서버 확인 중...</span>
     </div>
-    <div style="margin-top:10px; display:flex; gap:8px; align-items:center;">
-      <input type="password" id="apiKeyInput" placeholder="Anthropic API 키 (sk-ant-...)" style="flex:1; padding:8px 12px; border:1.5px solid #ddd; border-radius:8px; font-size:12px; outline:none;" />
-      <button onclick="saveApiKey()" style="padding:8px 14px; background:#111; color:#fff; border:none; border-radius:8px; font-size:12px; cursor:pointer;">저장</button>
-      <span id="apiKeySaved" style="font-size:11px; color:#018d4c; display:none;">✓ 저장됨</span>
+  </div>
+
+  <!-- API 키 -->
+  <div class="step" style="background:#f8f8f8;">
+    <div class="step-title" style="margin-bottom:8px;">⚙ 설정</div>
+    <div class="label">Anthropic API 키</div>
+    <div class="api-row">
+      <input type="password" id="apiKeyInput" placeholder="sk-ant-..." />
+      <button class="btn-gray" onclick="saveApiKey()">저장</button>
+      <span class="api-saved" id="apiSaved">✓</span>
     </div>
+    <div class="label">네이버 Client ID</div>
+    <input type="text" id="naverClientId" placeholder="네이버 개발자센터 Client ID" style="margin-bottom:8px;" />
+    <div class="label">네이버 Client Secret</div>
+    <input type="password" id="naverClientSecret" placeholder="네이버 개발자센터 Client Secret" />
+    <button class="btn-gray" onclick="saveNaverKey()" style="margin-top:4px;">네이버 키 저장</button>
+    <span class="api-saved" id="naverSaved">✓</span>
   </div>
 
-  <div class="tabs">
-    <button class="tab active" id="tabSingle" onclick="switchTab('single')">단일</button>
-    <button class="tab" id="tabBulk" onclick="switchTab('bulk')">대량</button>
-  </div>
-
-  <!-- 단일 -->
-  <div id="singleTab">
+  <!-- Step 1: 메인키워드 + 상품명 수집 -->
+  <div class="step">
+    <div class="step-title"><span class="step-num">1</span> 메인키워드로 경쟁사 상품명 수집</div>
     <div class="input-row">
-      <input type="text" id="queryInput" placeholder="상품명" />
+      <input type="text" id="mainKw" placeholder="메인키워드 (예: 도라지정과)" />
+      <input type="number" id="collectCount" value="30" min="1" max="300" style="flex:0 0 80px;" />
+      <button class="btn-green" id="collectBtn" onclick="collectNames()">수집</button>
     </div>
-    <div class="input-row">
-      <input type="text" id="nvmidInput" placeholder="nvmid (선택)" />
-      <button class="btn-green" id="searchBtn" onclick="searchSingle()">검색</button>
+    <div class="hint">* 수집 갯수: 1~300개</div>
+    <div class="input-row" style="align-items:center; gap:10px; margin-bottom:4px;">
+      <span style="font-size:12px; color:#555; white-space:nowrap;">경쟁사 상품명에서 추가할 키워드 수:</span>
+      <input type="number" id="keywordExtractCount" value="10" min="1" max="50" style="flex:0 0 60px;" />
+      <span style="font-size:11px; color:#aaa;">개</span>
     </div>
-    <div class="kw-label">⚡ 필수키워드 (상품명·속성·태그에서 제거할 단어, 스페이스로 구분)</div>
-    <input type="text" class="required-kw" id="requiredKw" placeholder="예: 보조배터리 급속충전 (빈칸이면 제거 안 함)" />
-    <div id="errorBox" class="error-box" style="display:none;"></div>
-    <div id="singleLoading" class="loading" style="display:none;">검색 중...</div>
-    <div id="singleResult"></div>
+    <div class="progress-wrap" id="collectProgress">
+      <div class="progress-bar"><div class="progress-fill" id="collectFill"></div></div>
+      <div class="progress-text" id="collectText">수집 중...</div>
+    </div>
+    <div id="nameListWrap" style="display:none;">
+      <div class="name-count" id="nameCount"></div>
+      <div class="name-list" id="nameList"></div>
+      <div style="margin-top:6px; display:flex; gap:6px;">
+        <button class="btn-gray" onclick="checkAll(true)" style="font-size:11px; padding:4px 10px;">전체선택</button>
+        <button class="btn-gray" onclick="checkAll(false)" style="font-size:11px; padding:4px 10px;">전체해제</button>
+      </div>
+    </div>
   </div>
 
-  <!-- 대량 -->
-  <div id="bulkTab" style="display:none;">
-    <div class="kw-label">⚡ 필수키워드 (상품명·속성·태그에서 제거할 단어, 스페이스로 구분)</div>
-    <input type="text" class="required-kw" id="bulkRequiredKw" placeholder="예: 보조배터리 급속충전 (빈칸이면 제거 안 함)" />
-    <label class="file-area" id="fileArea">
-      <input type="file" id="csvFile" accept=".csv,.txt" onchange="handleFile(event)" />
-      <p>📂 CSV 파일 업로드 (A열: 상품명, B열: nvmid)</p>
-      <p style="font-size:11px;margin-top:4px;">엑셀 → 다른이름저장 → CSV</p>
-    </label>
-    <textarea id="bulkInput" placeholder="또는 직접 입력: 상품명|nvmid (한 줄에 하나씩)"></textarea>
-    <div class="hint">* 줄바꿈으로 구분 / nvmid 없으면 상품명만 입력</div>
-    <div class="btn-row">
-      <button class="btn-green" id="bulkStartBtn" onclick="startBulk()">시작</button>
-      <button class="btn-gray" id="bulkStopBtn" style="display:none;" onclick="stopBulk()">중지</button>
-      <button class="btn-gray" id="exportBtn" style="display:none;" onclick="exportCSV()">CSV 저장</button>
+  <!-- Step 2: 내 상품 정보 -->
+  <div class="step">
+    <div class="step-title"><span class="step-num">2</span> 내 상품 태그·속성 추출</div>
+    <div class="input-row">
+      <input type="text" id="myName" placeholder="내 상품명" />
     </div>
-    <div class="progress-wrap" id="progressWrap">
-      <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
-      <div class="progress-text" id="progressText">0 / 0</div>
+    <div class="input-row">
+      <input type="text" id="myNvmid" placeholder="nvmid" style="flex:0 0 160px;" />
+      <input type="text" id="myLink" placeholder="스마트스토어 링크 (태그용)" style="flex:1;" />
     </div>
-    <div id="bulkResult" class="result-list"></div>
+    <div class="hint">상품명+nvmid → 속성 추출 / 링크 → 태그 추출</div>
+    <div class="input-row">
+      <button class="btn-green" id="extractBtn" onclick="extractInfo()" style="width:100%;">추출</button>
+    </div>
+    <div id="extractLoading" class="loading" style="display:none;">추출 중...</div>
+    <div id="extractResult"></div>
+  </div>
+
+  <!-- Step 3: 쇼핑 키워드 -->
+  <div class="step">
+    <div class="step-title"><span class="step-num">3</span> 추가 쇼핑 키워드</div>
+    <div class="kw-grid" id="kwGrid">
+      <label class="kw-chip"><input type="checkbox" value="인기" onchange="toggleChip(this)">인기</label>
+      <label class="kw-chip"><input type="checkbox" value="추천" onchange="toggleChip(this)">추천</label>
+      <label class="kw-chip"><input type="checkbox" value="최저가" onchange="toggleChip(this)">최저가</label>
+      <label class="kw-chip"><input type="checkbox" value="할인" onchange="toggleChip(this)">할인</label>
+      <label class="kw-chip"><input type="checkbox" value="무료배송" onchange="toggleChip(this)">무료배송</label>
+      <label class="kw-chip"><input type="checkbox" value="당일배송" onchange="toggleChip(this)">당일배송</label>
+      <label class="kw-chip"><input type="checkbox" value="구매" onchange="toggleChip(this)">구매</label>
+      <label class="kw-chip"><input type="checkbox" value="선물용" onchange="toggleChip(this)">선물용</label>
+      <label class="kw-chip"><input type="checkbox" value="가성비" onchange="toggleChip(this)">가성비</label>
+      <label class="kw-chip"><input type="checkbox" value="국내산" onchange="toggleChip(this)">국내산</label>
+      <label class="kw-chip"><input type="checkbox" value="정품" onchange="toggleChip(this)">정품</label>
+      <label class="kw-chip"><input type="checkbox" value="신상" onchange="toggleChip(this)">신상</label>
+    </div>
+  </div>
+
+  <!-- Step 4: 최종 상품명 생성 -->
+  <div class="step">
+    <div class="step-title"><span class="step-num">4</span> 최종 상품명 생성</div>
+    <div class="input-row" style="margin-bottom:10px;">
+      <label style="font-size:12px;color:#555;white-space:nowrap;">경쟁사 키워드 추출 수:</label>
+      <input type="number" id="kwExtractCount" value="10" min="1" max="30" style="flex:0 0 70px;" />
+      <span style="font-size:11px;color:#aaa;">개 (경쟁사 상품명에서 추출할 키워드 수)</span>
+    </div>
+    <button class="btn-green" id="generateBtn" onclick="generateName()" style="width:100%;">상품명 생성</button>
+    <div id="generateLoading" class="loading" style="display:none; margin-top:8px;">AI가 상품명 생성 중...</div>
+    <div id="generateResult"></div>
+  </div>
+
+  <!-- Step 5: 순위 체크 -->
+  <div class="step">
+    <div class="step-title"><span class="step-num">5</span> 키워드 순위 체크</div>
+    <div class="hint">최종 상품명 단어 + 메인키워드 조합으로 내 상품이 4위 이내인지 체크</div>
+    <div class="input-row" style="margin-bottom:8px; flex-wrap:wrap; gap:8px;">
+      <label style="font-size:12px;color:#555;">단어 조합:</label>
+      <label class="kw-chip" id="combo2chip"><input type="checkbox" id="combo2" value="2" onchange="toggleChip(this)" checked>2단어</label>
+      <label class="kw-chip" id="combo3chip"><input type="checkbox" id="combo3" value="3" onchange="toggleChip(this)" checked>3단어</label>
+      <label class="kw-chip" id="combo4chip"><input type="checkbox" id="combo4" value="4" onchange="toggleChip(this)">4단어</label>
+    </div>
+    <div class="input-row" style="margin-bottom:8px;align-items:center;gap:8px;">
+      <label style="font-size:12px;color:#555;white-space:nowrap;">노출 목표:</label>
+      <input type="number" id="randomCount" placeholder="제한없음" min="1" style="flex:0 0 80px;padding:6px 10px;border:1.5px solid #ddd;border-radius:8px;font-size:12px;" />
+      <span style="font-size:11px;color:#aaa;">개 노출되면 중단 (빈칸이면 전체)</span>
+    </div>
+    <button class="btn-green" id="rankCheckBtn" onclick="checkRanks()" style="width:100%;">순위 체크</button>
+    <div id="rankLoading" class="loading" style="display:none; margin-top:8px;">순위 체크 중...</div>
+    <div class="progress-wrap" id="rankProgress">
+      <div class="progress-bar"><div class="progress-fill" id="rankFill"></div></div>
+      <div class="progress-text" id="rankText"></div>
+    </div>
+    <div id="rankResult" style="margin-top:10px;"></div>
   </div>
 </div>
 
 <script>
 const API = 'https://undeposable-inarguably-renna.ngrok-free.dev';
-let bulkResults = [];
-let stopFlag = false;
+let extractedTags = [];
+let extractedAttrs = {};
+let extractedProductName = '';
+let collectedNames = [];
 
-// API 키 저장/불러오기
 function saveApiKey() {
-  const key = document.getElementById('apiKeyInput').value.trim();
-  localStorage.setItem('anthropic_api_key', key);
-  const saved = document.getElementById('apiKeySaved');
-  saved.style.display = 'inline';
-  setTimeout(() => saved.style.display = 'none', 2000);
+  localStorage.setItem('anthropic_api_key', document.getElementById('apiKeyInput').value.trim());
+  const s = document.getElementById('apiSaved');
+  s.style.display = 'inline';
+  setTimeout(() => s.style.display = 'none', 2000);
 }
 
-function getApiKey() {
-  return localStorage.getItem('anthropic_api_key') || '';
+function saveNaverKey() {
+  localStorage.setItem('naver_client_id', document.getElementById('naverClientId').value.trim());
+  localStorage.setItem('naver_client_secret', document.getElementById('naverClientSecret').value.trim());
+  const s = document.getElementById('naverSaved');
+  s.style.display = 'inline';
+  setTimeout(() => s.style.display = 'none', 2000);
 }
+
+function getApiKey() { return localStorage.getItem('anthropic_api_key') || ''; }
+function getNaverClientId() { return localStorage.getItem('naver_client_id') || ''; }
+function getNaverClientSecret() { return localStorage.getItem('naver_client_secret') || ''; }
 
 window.addEventListener('DOMContentLoaded', () => {
-  const key = getApiKey();
-  if (key) document.getElementById('apiKeyInput').value = key;
+  const k = getApiKey();
+  if (k) document.getElementById('apiKeyInput').value = k;
+
+  // 엔터키 이벤트
+  document.getElementById('mainKw').addEventListener('keydown', e => { if (e.key === 'Enter') collectNames(); });
+  document.getElementById('myName').addEventListener('keydown', e => { if (e.key === 'Enter') extractInfo(); });
+  document.getElementById('myNvmid').addEventListener('keydown', e => { if (e.key === 'Enter') extractInfo(); });
 });
-
-function parseRequiredKw(kwStr) {
-  return kwStr.trim().split(/\s+/).filter(w => w.length >= 2);
-}
-
-function copyText(text, btn) {
-  navigator.clipboard.writeText(text).then(() => {
-    const orig = btn.textContent;
-    btn.textContent = '복사됨!';
-    setTimeout(() => btn.textContent = orig, 1500);
-  });
-}
 
 async function checkServer() {
   const el = document.getElementById('serverStatus');
   try {
-    const ctrl = new AbortController();
-    const timer = setTimeout(() => ctrl.abort(), 3000);
-    const res = await fetch(API + '/health', { signal: ctrl.signal, headers: { 'ngrok-skip-browser-warning': 'true' } });
-    clearTimeout(timer);
+    const res = await fetch(API + '/health', { headers: { 'ngrok-skip-browser-warning': 'true' } });
     const data = await res.json();
     if (data.status === 'ok') {
       el.className = 'server-status ok';
       el.innerHTML = '<div class="dot"></div><span>서버 연결됨</span>';
-      return true;
+      return;
     }
   } catch {}
   el.className = 'server-status err';
-  el.innerHTML = '<div class="dot"></div><span>서버 오프라인 — 서버실행.bat 실행해주세요</span>';
-  return false;
+  el.innerHTML = '<div class="dot"></div><span>서버 오프라인</span>';
 }
 checkServer();
 setInterval(checkServer, 10000);
 
-function switchTab(tab) {
-  document.getElementById('singleTab').style.display = tab === 'single' ? 'block' : 'none';
-  document.getElementById('bulkTab').style.display = tab === 'bulk' ? 'block' : 'none';
-  document.getElementById('tabSingle').classList.toggle('active', tab === 'single');
-  document.getElementById('tabBulk').classList.toggle('active', tab === 'bulk');
+function toggleChip(el) {
+  el.closest('.kw-chip').classList.toggle('active', el.checked);
 }
 
-function parseRequiredKw(kwStr) {
-  return kwStr.trim().split(/\s+/).filter(w => w.length >= 2);
+// Step 1: 수집
+async function collectNames() {
+  const kw = document.getElementById('mainKw').value.trim();
+  const count = parseInt(document.getElementById('collectCount').value) || 30;
+  if (!kw) return alert('메인키워드를 입력해주세요');
+
+  const btn = document.getElementById('collectBtn');
+  btn.disabled = true; btn.textContent = '수집 중...';
+  document.getElementById('collectProgress').style.display = 'block';
+  document.getElementById('collectFill').style.width = '30%';
+  document.getElementById('collectText').textContent = '상품명 수집 중...';
+  document.getElementById('nameListWrap').style.display = 'none';
+
+  try {
+    const params = new URLSearchParams({ keyword: kw, count });
+    const res = await fetch(`${API}/collect?${params}`, {
+      headers: { 'ngrok-skip-browser-warning': 'true' }
+    });
+    const d = await res.json();
+    if (d.status === 'error') throw new Error(d.error);
+    collectedNames = d.names || [];
+
+    document.getElementById('collectFill').style.width = '100%';
+    document.getElementById('collectText').textContent = `${collectedNames.length}개 수집 완료`;
+    document.getElementById('nameCount').textContent = `총 ${collectedNames.length}개 수집됨`;
+    document.getElementById('nameList').innerHTML = collectedNames.map((n, i) =>
+      `<div class="name-item">
+        <input type="checkbox" id="name_${i}" checked>
+        <label for="name_${i}" style="cursor:pointer;font-size:12px;">${n}</label>
+      </div>`
+    ).join('');
+    document.getElementById('nameListWrap').style.display = 'block';
+  } catch (e) {
+    alert('수집 실패: ' + e.message);
+  } finally {
+    btn.disabled = false; btn.textContent = '수집';
+  }
+}
+
+function checkAll(checked) {
+  document.querySelectorAll('#nameList input[type=checkbox]').forEach(cb => cb.checked = checked);
+}
+
+function getCheckedNames() {
+  return [...document.querySelectorAll('#nameList input[type=checkbox]')]
+    .filter(cb => cb.checked)
+    .map(cb => collectedNames[parseInt(cb.id.replace('name_', ''))]);
+}
+
+function parseLinkInput(val) {}
+
+// Step 2: 추출
+async function extractInfo() {
+  const myName = document.getElementById('myName').value.trim();
+  const nvmid = document.getElementById('myNvmid').value.trim();
+  const link = document.getElementById('myLink').value.trim();
+
+  if (!myName) return alert('상품명을 입력해주세요');
+
+  const btn = document.getElementById('extractBtn');
+  btn.disabled = true; btn.textContent = '추출 중...';
+  document.getElementById('extractLoading').style.display = 'block';
+  document.getElementById('extractResult').innerHTML = '';
+
+  // 상품명 50자 truncate
+  const shortName = myName.length > 50 ? myName.slice(0, 50) : myName;
+
+  try {
+    // 속성: 상품명+nvmid로 /search
+    const params = new URLSearchParams({ query: shortName });
+    if (nvmid) params.append('nvmid', nvmid);
+    params.append('apiKey', getApiKey());
+
+    // 태그: 링크로 /catalog (병렬)
+    const searchPromise = fetch(`${API}/search?${params}`, { headers: { 'ngrok-skip-browser-warning': 'true' } });
+    const tagPromise = link
+      ? fetch(`${API}/catalog?${new URLSearchParams({ link })}`, { headers: { 'ngrok-skip-browser-warning': 'true' } })
+      : Promise.resolve(null);
+
+    const [searchRes, tagRes] = await Promise.all([searchPromise, tagPromise]);
+    const searchData = await searchRes.json();
+    const tagData = tagRes ? await tagRes.json() : null;
+
+    extractedAttrs = searchData.attributes || {};
+    extractedTags = tagData?.tags || searchData.tags || [];
+    extractedProductName = myName;
+
+    let html = '';
+    if (Object.keys(extractedAttrs).length) {
+      html += `<div style="margin-top:8px;"><div class="label">속성</div>
+        ${Object.entries(extractedAttrs).map(([k,v])=>`<div class="attr-row"><span class="attr-key">${k}</span><span>${v}</span></div>`).join('')}
+      </div>`;
+    }
+    if (extractedTags.length) {
+      html += `<div style="margin-top:8px;"><div class="label">태그</div>
+        <div class="tag-wrap">${extractedTags.map(t=>`<span class="tag">#${t}</span>`).join('')}</div>
+      </div>`;
+    }
+    if (!html) html = '<div style="font-size:12px;color:#aaa;margin-top:8px;">속성/태그 없음</div>';
+    document.getElementById('extractResult').innerHTML = html;
+
+  } catch (e) {
+    document.getElementById('extractResult').innerHTML = `<div style="font-size:12px;color:#c0392b;margin-top:8px;">오류: ${e.message}</div>`;
+  } finally {
+    btn.disabled = false; btn.textContent = '추출';
+    document.getElementById('extractLoading').style.display = 'none';
+  }
+}
+
+// Step 4: 생성
+async function generateName() {
+  const apiKey = getApiKey();
+  const mainKw = document.getElementById('mainKw').value.trim();
+  const myName = extractedProductName || '';
+  if (!apiKey) return alert('API 키를 입력해주세요');
+  if (!mainKw) return alert('메인키워드를 입력해주세요');
+
+  const checkedNames = getCheckedNames();
+  const shoppingKws = [...document.querySelectorAll('#kwGrid input:checked')].map(cb => cb.value);
+  const kwExtractCount = document.getElementById('kwExtractCount').value || 10;
+  const btn = document.getElementById('generateBtn');
+  btn.disabled = true; btn.textContent = '생성 중...';
+  document.getElementById('generateLoading').style.display = 'block';
+  document.getElementById('generateResult').innerHTML = '';
+
+  try {
+    const body = {
+      apiKey, mainKw, myName, kwExtractCount,
+      collected: checkedNames,
+      attrs: Object.entries(extractedAttrs).map(([k,v]) => `${k}: ${v}`),
+      tags: extractedTags,
+      shoppingKws
+    };
+
+    const res = await fetch(`${API}/generate`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'ngrok-skip-browser-warning': 'true'
+      },
+      body: JSON.stringify(body)
+    });
+    const d = await res.json();
+
+    if (d.status === 'ok') {
+      document.getElementById('generateResult').innerHTML = `
+        <div class="result-card">
+          <div class="label" style="margin-bottom:6px;">생성된 상품명 (수정 가능)</div>
+          <textarea id="resultName" style="width:100%;border:none;background:transparent;font-size:15px;font-weight:700;line-height:1.6;resize:vertical;min-height:60px;outline:none;">${d.name}</textarea>
+          <button class="copy-btn" onclick="copyText(document.getElementById('resultName').value, this)">복사</button>
+        </div>`;
+    } else {
+      document.getElementById('generateResult').innerHTML = `<div style="font-size:12px;color:#c0392b;margin-top:8px;">오류: ${d.error}</div>`;
+    }
+  } catch (e) {
+    document.getElementById('generateResult').innerHTML = `<div style="font-size:12px;color:#c0392b;margin-top:8px;">오류: ${e.message}</div>`;
+  } finally {
+    btn.disabled = false; btn.textContent = '상품명 생성';
+    document.getElementById('generateLoading').style.display = 'none';
+  }
+}
+
+async function checkRanks() {
+  const nvmid = document.getElementById('myNvmid').value.trim();
+  const mainKw = document.getElementById('mainKw').value.trim();
+  const nameEl = document.getElementById('resultName');
+  const generatedName = nameEl ? nameEl.value.trim() : '';
+
+  if (!nvmid) return alert('내 상품 nvmid를 입력해주세요 (2번에서 추출 필요)');
+  if (!generatedName) return alert('먼저 4번에서 상품명을 생성해주세요');
+
+  const comboSizes = [];
+  if (document.getElementById('combo2').checked) comboSizes.push(2);
+  if (document.getElementById('combo3').checked) comboSizes.push(3);
+  if (document.getElementById('combo4').checked) comboSizes.push(4);
+  if (!comboSizes.length) return alert('단어 조합을 선택해주세요');
+
+  const nameWords = generatedName.split(/\s+/).filter(w => w.length >= 2);
+  if (!nameWords.includes(mainKw)) nameWords.unshift(mainKw);
+
+  function getPermutations(arr, size) {
+    const result = [];
+    function helper(current, remaining) {
+      if (current.length === size) { result.push([...current]); return; }
+      for (let i = 0; i < remaining.length; i++) {
+        helper([...current, remaining[i]], [...remaining.slice(0, i), ...remaining.slice(i + 1)]);
+      }
+    }
+    helper([], arr);
+    return result;
+  }
+
+  const combos = new Set();
+  for (const size of comboSizes) {
+    for (const perm of getPermutations(nameWords, size)) {
+      if (perm.includes(mainKw)) combos.add(perm.join(' '));
+    }
+  }
+
+  const comboList = [...combos];
+  if (!comboList.length) return alert('조합을 생성할 수 없습니다');
+
+  // 전체 순열 셔플
+  const shuffled = [...comboList];
+  for (let i = shuffled.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+  }
+  const finalList = shuffled;
+
+  const btn = document.getElementById('rankCheckBtn');
+  btn.disabled = true; btn.textContent = '체크 중...';
+  document.getElementById('rankLoading').style.display = 'block';
+  document.getElementById('rankProgress').style.display = 'block';
+  document.getElementById('rankResult').innerHTML = '';
+  document.getElementById('rankFill').style.width = '0%';
+  document.getElementById('rankText').textContent = `0 / ${finalList.length}`;
+
+  try {
+    // 병렬 처리 - 20개씩 묶어서 동시 요청
+    const BATCH = 50;
+    const allResults = [];
+    let done = 0;
+    const targetCount = parseInt(document.getElementById('randomCount').value) || 0;
+
+    for (let i = 0; i < finalList.length; i += BATCH) {
+      const batch = finalList.slice(i, i + BATCH);
+      const res = await fetch(`${API}/rank-check`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'ngrok-skip-browser-warning': 'true' },
+        body: JSON.stringify({ nvmid, combos: batch })
+      });
+      const d = await res.json();
+      if (d.status === 'ok') allResults.push(...d.results);
+      done += batch.length;
+      const top4Now = allResults.filter(r => r.inTop4).length;
+      document.getElementById('rankFill').style.width = `${(done / finalList.length * 100).toFixed(0)}%`;
+      document.getElementById('rankText').textContent = `${done} / ${finalList.length} | 노출: ${top4Now}개`;
+      if (targetCount > 0 && top4Now >= targetCount) break;
+      if (i + BATCH < finalList.length) await new Promise(r => setTimeout(r, 300));
+    }
+
+    const top4 = allResults.filter(r => r.inTop4);
+    const errors = allResults.filter(r => r.rank === -1);
+    const html = allResults.map(r => {
+      const color = r.rank === -1 ? '#e67e22' : r.rank === 0 ? '#bbb' : r.inTop4 ? '#018d4c' : '#c0392b';
+      const badge = r.rank === -1 ? '⚠️ 오류' : r.rank === 0 ? '미검출' : r.inTop4 ? `✅ ${r.rank}위` : `❌ ${r.rank}위`;
+      return `<div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid #f5f5f5;font-size:12px;">
+        <span>${r.keyword}</span>
+        <span style="color:${color};font-weight:700;">${badge}</span>
+      </div>`;
+    }).join('');
+
+    const top4Keywords = top4.map(r => r.keyword).join('\n');
+
+    document.getElementById('rankResult').innerHTML = `
+      <div style="font-size:12px;font-weight:700;margin-bottom:8px;">
+        4위 이내: ${top4.length}/${allResults.length}개
+        ${errors.length > 0 ? `<button onclick="retryErrors()" style="margin-left:10px;padding:3px 10px;background:#e67e22;color:#fff;border:none;border-radius:6px;font-size:11px;cursor:pointer;">⚠️ 오류 ${errors.length}개 재시도</button>` : ''}
+      </div>
+      ${html}
+      <div style="margin-top:16px;padding:12px;background:#f0faf5;border:1.5px solid #c5e8d5;border-radius:10px;">
+        <div style="font-size:12px;font-weight:700;color:#018d4c;margin-bottom:8px;">✅ 노출 키워드 정리 (${top4.length}개)</div>
+        <div style="display:flex;gap:6px;align-items:center;margin-bottom:8px;">
+          <input type="number" id="pickCount" placeholder="전체" min="1" style="width:70px;padding:5px 8px;border:1.5px solid #ddd;border-radius:6px;font-size:12px;" />
+          <span style="font-size:11px;color:#aaa;">개 랜덤 추출</span>
+          <button class="btn-gray" style="padding:5px 12px;font-size:11px;" onclick="pickRandom()">추출</button>
+        </div>
+        <textarea id="top4TextArea" style="width:100%;border:none;background:transparent;font-size:12px;line-height:1.8;resize:vertical;min-height:80px;outline:none;color:#111;">${top4Keywords}</textarea>
+        <div style="display:flex;gap:6px;margin-top:6px;">
+          <button class="copy-btn" onclick="copyTop4Lines()">줄바꿈 복사</button>
+          <button class="copy-btn" onclick="copyTop4Comma()">쉼표 복사</button>
+        </div>
+      </div>`;
+  } catch (e) {
+    document.getElementById('rankResult').innerHTML = `<div style="color:#c0392b;font-size:12px;">오류: ${e.message}</div>`;
+  } finally {
+    btn.disabled = false; btn.textContent = '순위 체크';
+    document.getElementById('rankLoading').style.display = 'none';
+    document.getElementById('rankFill').style.width = '100%';
+  }
+}
+
+async function retryErrors() {
+  const nvmid = document.getElementById('myNvmid').value.trim();
+  const resultDivs = document.querySelectorAll('#rankResult > div:not(:last-child) > div');
+  // 오류난 키워드 수집
+  const errorKeywords = [];
+  document.querySelectorAll('#rankResult > div').forEach(div => {
+    const spans = div.querySelectorAll('span');
+    if (spans.length >= 2 && spans[1].textContent.includes('오류')) {
+      errorKeywords.push(spans[0].textContent.trim());
+    }
+  });
+  if (!errorKeywords.length) return;
+
+  try {
+    const res = await fetch(`${API}/rank-check`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'ngrok-skip-browser-warning': 'true' },
+      body: JSON.stringify({ nvmid, combos: errorKeywords })
+    });
+    const d = await res.json();
+    if (d.status !== 'ok') return;
+
+    // 결과 업데이트
+    d.results.forEach(r => {
+      document.querySelectorAll('#rankResult > div').forEach(div => {
+        const spans = div.querySelectorAll('span');
+        if (spans.length >= 2 && spans[0].textContent.trim() === r.keyword) {
+          const color = r.rank === -1 ? '#e67e22' : r.rank === 0 ? '#bbb' : r.inTop4 ? '#018d4c' : '#c0392b';
+          const badge = r.rank === -1 ? '⚠️ 오류' : r.rank === 0 ? '미검출' : r.inTop4 ? `✅ ${r.rank}위` : `❌ ${r.rank}위`;
+          spans[1].style.color = color;
+          spans[1].textContent = badge;
+        }
+      });
+    });
+  } catch(e) { alert('재시도 오류: ' + e.message); }
+}
+
+function pickRandom() {
+  const ta = document.getElementById('top4TextArea');
+  if (!ta) return;
+  const lines = ta.value.split('\n').filter(l => l.trim());
+  const n = parseInt(document.getElementById('pickCount').value);
+  if (!n || n >= lines.length) return;
+  const shuffled = [...lines];
+  for (let i = shuffled.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+  }
+  ta.value = shuffled.slice(0, n).join('\n');
+}
+
+function copyTop4Lines() {
+  const ta = document.getElementById('top4TextArea');
+  if (!ta) return;
+  navigator.clipboard.writeText(ta.value).then(() => {
+    const btn = event.target;
+    btn.textContent = '복사됨!'; setTimeout(() => btn.textContent = '줄바꿈 복사', 1500);
+  });
+}
+
+function copyTop4Comma() {
+  const ta = document.getElementById('top4TextArea');
+  if (!ta) return;
+  const csv = ta.value.split('\n').filter(l => l.trim()).join(', ');
+  navigator.clipboard.writeText(csv).then(() => {
+    const btn = event.target;
+    btn.textContent = '복사됨!'; setTimeout(() => btn.textContent = '쉼표 복사', 1500);
+  });
 }
 
 function copyText(text, btn) {
@@ -204,189 +615,6 @@ function copyText(text, btn) {
     setTimeout(() => btn.textContent = orig, 1500);
   });
 }
-
-async function searchSingle() {
-  const query = document.getElementById('queryInput').value.trim();
-  const nvmid = document.getElementById('nvmidInput').value.trim();
-  const kwStr = document.getElementById('requiredKw').value;
-  if (!query) return;
-
-  const btn = document.getElementById('searchBtn');
-  btn.disabled = true; btn.textContent = '검색 중...';
-  document.getElementById('errorBox').style.display = 'none';
-  document.getElementById('singleLoading').style.display = 'block';
-  document.getElementById('singleResult').innerHTML = '';
-
-  const requiredKws = parseRequiredKw(kwStr);
-
-  try {
-    const params = new URLSearchParams({ query });
-    if (nvmid) params.append('nvmid', nvmid);
-    requiredKws.forEach(k => params.append('kw', k));
-    const apiKey = getApiKey();
-    if (apiKey) params.append('apiKey', apiKey);
-
-    const res = await fetch(`${API}/search?${params}`, { headers: { 'ngrok-skip-browser-warning': 'true' } });
-    const d = await res.json();
-    renderSingle(d);
-  } catch (e) {
-    document.getElementById('errorBox').style.display = 'block';
-    document.getElementById('errorBox').textContent = '서버 연결 실패 — 서버실행.bat을 실행해주세요';
-  } finally {
-    btn.disabled = false; btn.textContent = '검색';
-    document.getElementById('singleLoading').style.display = 'none';
-  }
-}
-
-function renderSingle(d) {
-  const r = document.getElementById('singleResult');
-  if (d.status === 'notFound') { r.innerHTML = '<div class="empty">상품을 찾을 수 없습니다</div>'; return; }
-  if (d.status === 'nvmidMismatch') { r.innerHTML = `<div class="empty" style="color:#5050cc">nvmid 불일치<br><small style="color:#aaa">${d.error||''}</small></div>`; return; }
-  if (d.status === 'noAttributes') { r.innerHTML = `<div class="card"><div class="prod-name">${d.productName||'-'}</div><div style="font-size:12px;color:#888;margin-top:6px;">✓ nvmid 일치 — 속성 없는 상품</div></div>`; return; }
-  if (d.status === 'error') { r.innerHTML = `<div class="empty">오류: ${d.error}</div>`; return; }
-
-  const c1 = d.c1 || '', c2 = d.c2 || '', c3 = d.c3 || '';
-
-  let html = `<div class="card"><div class="prod-name">${d.productName||'-'}</div></div>`;
-
-  if (Object.keys(d.attributes||{}).length) {
-    html += `<div class="card"><div class="card-label">속성</div>
-      ${Object.entries(d.attributes).map(([k,v])=>`<div class="attr-row"><span class="attr-key">${k}</span><span class="attr-val">${v}</span></div>`).join('')}
-    </div>`;
-  }
-
-  if (d.tags?.length) {
-    const tagStr = d.tags.join(' ');
-    html += `<div class="card">
-      <div class="card-label">태그 <button class="copy-btn" onclick="copyText('${tagStr}',this)">복사</button></div>
-      <div class="tag-wrap">${d.tags.map(t=>`<span class="tag">#${t}</span>`).join('')}</div>
-    </div>`;
-  }
-
-  html += `
-    <div class="card">
-      <div class="card-label badge-1">완성 상품명 1차 (속성) <button class="copy-btn" onclick="copyText(this.closest('.card').querySelector('.completed').textContent,this)">복사</button></div>
-      <div class="completed">${c1}</div>
-    </div>
-    <div class="card">
-      <div class="card-label badge-2">완성 상품명 2차 (태그) <button class="copy-btn" onclick="copyText(this.closest('.card').querySelector('.completed').textContent,this)">복사</button></div>
-      <div class="completed">${c2}</div>
-    </div>
-    <div class="card">
-      <div class="card-label badge-3">완성 상품명 3차 (속성+태그) <button class="copy-btn" onclick="copyText(this.closest('.card').querySelector('.completed').textContent,this)">복사</button></div>
-      <div class="completed">${c3}</div>
-    </div>`;
-
-  r.innerHTML = html;
-}
-
-function handleFile(e) {
-  const file = e.target.files[0];
-  if (!file) return;
-  const reader = new FileReader();
-  reader.onload = (ev) => {
-    const lines = ev.target.result.split(/\r?\n/).filter(Boolean);
-    const rows = lines.map(l=>l.split(',').map(c=>c.replace(/^"|"$/g,'').trim())).filter(cols=>cols[0]&&cols[0]!=='상품명');
-    document.getElementById('bulkInput').value = rows.map(cols=>cols[1]?`${cols[0]}|${cols[1]}`:cols[0]).join('\n');
-  };
-  reader.readAsText(file, 'UTF-8');
-}
-
-let bulkTotal = 0;
-async function startBulk() {
-  const raw = document.getElementById('bulkInput').value.trim();
-  if (!raw) return;
-  const kwStr = document.getElementById('bulkRequiredKw').value;
-  const requiredKws = parseRequiredKw(kwStr);
-  const lines = raw.split('\n').map(s=>s.trim()).filter(Boolean);
-  const items = lines.map(line => {
-    const parts = line.split('|');
-    return parts.length >= 2 ? { query: parts[0].trim(), nvmid: parts[1].trim() } : { query: line, nvmid: '' };
-  });
-
-  bulkResults = [];
-  stopFlag = false;
-  bulkTotal = items.length;
-  document.getElementById('bulkResult').innerHTML = '';
-  document.getElementById('progressWrap').style.display = 'block';
-  document.getElementById('bulkStartBtn').style.display = 'none';
-  document.getElementById('bulkStopBtn').style.display = 'inline-block';
-  document.getElementById('exportBtn').style.display = 'none';
-  setProgress(0, items.length);
-
-  for (let i = 0; i < items.length; i++) {
-    if (stopFlag) break;
-    const item = items[i];
-    try {
-      const params = new URLSearchParams({ query: item.query });
-      if (item.nvmid) params.append('nvmid', item.nvmid);
-      requiredKws.forEach(k => params.append('kw', k));
-      const apiKey = getApiKey();
-      if (apiKey) params.append('apiKey', apiKey);
-      const res = await fetch(`${API}/search?${params}`, { headers: { 'ngrok-skip-browser-warning': 'true' } });
-      const d = await res.json();
-      bulkResults.push({ query: item.query, nvmid: item.nvmid, ...d });
-    } catch {
-      bulkResults.push({ query: item.query, nvmid: item.nvmid, status: 'error', error: '서버 연결 실패' });
-    }
-    setProgress(i + 1, items.length);
-    renderBulk();
-    if (i < items.length - 1) await new Promise(r => setTimeout(r, 1200));
-  }
-
-  document.getElementById('bulkStartBtn').style.display = 'inline-block';
-  document.getElementById('bulkStopBtn').style.display = 'none';
-  if (bulkResults.length) document.getElementById('exportBtn').style.display = 'inline-block';
-}
-
-function stopBulk() {
-  stopFlag = true;
-  document.getElementById('bulkStartBtn').style.display = 'inline-block';
-  document.getElementById('bulkStopBtn').style.display = 'none';
-  if (bulkResults.length) document.getElementById('exportBtn').style.display = 'inline-block';
-}
-
-function setProgress(done, total) {
-  const pct = total ? Math.round(done / total * 100) : 0;
-  document.getElementById('progressFill').style.width = pct + '%';
-  document.getElementById('progressText').textContent = `${done} / ${total} 완료`;
-}
-
-function renderBulk() {
-  document.getElementById('bulkResult').innerHTML = bulkResults.map(d => {
-    const badge = d.status === 'success' ? '<span class="sbadge b-ok">완료</span>'
-      : d.status === 'noAttributes' ? '<span class="sbadge b-na">속성없음</span>'
-      : d.status === 'nvmidMismatch' ? '<span class="sbadge b-mis">nvmid불일치</span>'
-      : d.status === 'notFound' ? '<span class="sbadge b-nf">미발견</span>'
-      : '<span class="sbadge b-err">오류</span>';
-    const failReason = d.status !== 'success' ? `<div class="ri-err">${d.error||d.status}</div>` : '';
-    return `<div class="result-item">
-      <div class="ri-name">${d.productName||d.query}${badge}</div>
-      ${d.c1 ? `<div class="ri-comp" style="color:#018d4c">1차: ${d.c1}</div>` : ''}
-      ${failReason}
-    </div>`;
-  }).join('');
-}
-
-function exportCSV() {
-  if (!bulkResults.length) return;
-  const headers = ['검색어','nvmid','상품명','태그','속성','완성상품명1차(속성)','완성상품명2차(태그)','완성상품명3차(속성+태그)','실패사유'];
-  const rows = bulkResults.map(d => {
-    const attrs = Object.entries(d.attributes||{}).map(([k,v])=>`${k}: ${v}`).join(' / ');
-    const fail = d.status === 'nvmidMismatch' ? 'nvmid 불일치'
-      : d.status === 'noAttributes' ? '속성없는상품(nvmid일치)'
-      : d.status === 'notFound' ? '미발견'
-      : d.status === 'error' ? (d.error||'오류') : '';
-    return [d.query||'', d.nvmid||'', d.productName||'', (d.tags||[]).join(' '), attrs, d.c1||'', d.c2||'', d.c3||'', fail];
-  });
-  const csv = [headers,...rows].map(r=>r.map(c=>`"${String(c).replace(/"/g,'""')}"`).join(',')).join('\n');
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(new Blob(['\uFEFF'+csv], {type:'text/csv;charset=utf-8;'}));
-  a.download = `태그추출_${new Date().toLocaleDateString('ko-KR').replace(/\.\s*/g,'-').slice(0,-1)}.csv`;
-  a.click();
-}
-
-document.getElementById('queryInput').addEventListener('keydown', e => { if(e.key==='Enter') searchSingle(); });
 </script>
 </body>
 </html>
