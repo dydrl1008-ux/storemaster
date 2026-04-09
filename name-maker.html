@@ -127,14 +127,16 @@ input:focus { border-color: #03c75a; }
   <div class="step">
     <div class="step-title"><span class="step-num">2</span> 내 상품 태그·속성 추출</div>
     <div class="input-row">
-      <input type="text" id="myLink" placeholder="스마트스토어 링크 또는 nvmid (예: https://smartstore.naver.com/...)" oninput="parseLinkInput(this.value)" />
+      <input type="text" id="myName" placeholder="내 상품명" />
     </div>
-    <div class="input-row" style="display:flex;gap:8px;align-items:center;">
-      <span style="font-size:11px;color:#aaa;">nvmid:</span>
-      <input type="text" id="myNvmid" placeholder="자동 추출됨" style="flex:1;" />
-      <button class="btn-green" id="extractBtn" onclick="extractInfo()">추출</button>
+    <div class="input-row">
+      <input type="text" id="myNvmid" placeholder="nvmid" style="flex:0 0 160px;" />
+      <input type="text" id="myLink" placeholder="스마트스토어 링크 (태그용)" style="flex:1;" />
     </div>
-    <div class="hint">스마트스토어/브랜드스토어 링크 붙여넣으면 nvmid 자동 추출</div>
+    <div class="hint">상품명+nvmid → 속성 추출 / 링크 → 태그 추출</div>
+    <div class="input-row">
+      <button class="btn-green" id="extractBtn" onclick="extractInfo()" style="width:100%;">추출</button>
+    </div>
     <div id="extractLoading" class="loading" style="display:none;">추출 중...</div>
     <div id="extractResult"></div>
   </div>
@@ -297,71 +299,58 @@ function getCheckedNames() {
     .map(cb => collectedNames[parseInt(cb.id.replace('name_', ''))]);
 }
 
-function parseLinkInput(val) {
-  // 링크에서 nvmid 추출
-  // smartstore: /products/1234567890
-  // brand.naver.com: /products/1234567890
-  // 숫자만 입력한 경우
-  val = val.trim();
-  let nvmid = '';
-  const m = val.match(/\/products\/(\d+)/);
-  if (m) {
-    nvmid = m[1];
-  } else if (/^\d+$/.test(val)) {
-    nvmid = val;
-  }
-  if (nvmid) document.getElementById('myNvmid').value = nvmid;
-}
+function parseLinkInput(val) {}
 
 // Step 2: 추출
 async function extractInfo() {
+  const myName = document.getElementById('myName').value.trim();
   const nvmid = document.getElementById('myNvmid').value.trim();
   const link = document.getElementById('myLink').value.trim();
 
-  if (!nvmid && !link) return alert('링크 또는 nvmid를 입력해주세요');
-
-  // 링크에서 nvmid 재추출 시도
-  let finalNvmid = nvmid;
-  if (!finalNvmid && link) {
-    const m = link.match(/\/products\/(\d+)/);
-    if (m) finalNvmid = m[1];
-  }
-  if (!finalNvmid) return alert('nvmid를 찾을 수 없어요. 링크를 확인해주세요');
-
-  document.getElementById('myNvmid').value = finalNvmid;
+  if (!myName) return alert('상품명을 입력해주세요');
 
   const btn = document.getElementById('extractBtn');
   btn.disabled = true; btn.textContent = '추출 중...';
   document.getElementById('extractLoading').style.display = 'block';
   document.getElementById('extractResult').innerHTML = '';
 
+  // 상품명 50자 truncate
+  const shortName = myName.length > 50 ? myName.slice(0, 50) : myName;
+
   try {
-    const params = new URLSearchParams({ nvmid: finalNvmid });
+    // 속성: 상품명+nvmid로 /search
+    const params = new URLSearchParams({ query: shortName });
+    if (nvmid) params.append('nvmid', nvmid);
     params.append('apiKey', getApiKey());
-    const res = await fetch(`${API}/catalog?${params}`, { headers: { 'ngrok-skip-browser-warning': 'true' } });
-    const d = await res.json();
 
-    if (d.status === 'success' || d.status === 'noAttributes') {
-      extractedTags = d.tags || [];
-      extractedAttrs = d.attributes || {};
-      extractedProductName = d.productName || '';
+    // 태그: 링크로 /catalog (병렬)
+    const searchPromise = fetch(`${API}/search?${params}`, { headers: { 'ngrok-skip-browser-warning': 'true' } });
+    const tagPromise = link
+      ? fetch(`${API}/catalog?${new URLSearchParams({ link })}`, { headers: { 'ngrok-skip-browser-warning': 'true' } })
+      : Promise.resolve(null);
 
-      let html = '';
-      if (Object.keys(extractedAttrs).length) {
-        html += `<div style="margin-top:8px;"><div class="label">속성</div>
-          ${Object.entries(extractedAttrs).map(([k,v])=>`<div class="attr-row"><span class="attr-key">${k}</span><span>${v}</span></div>`).join('')}
-        </div>`;
-      }
-      if (extractedTags.length) {
-        html += `<div style="margin-top:8px;"><div class="label">태그</div>
-          <div class="tag-wrap">${extractedTags.map(t=>`<span class="tag">#${t}</span>`).join('')}</div>
-        </div>`;
-      }
-      if (!html) html = '<div style="font-size:12px;color:#aaa;margin-top:8px;">속성/태그 없음</div>';
-      document.getElementById('extractResult').innerHTML = html;
-    } else {
-      document.getElementById('extractResult').innerHTML = `<div style="font-size:12px;color:#c0392b;margin-top:8px;">${d.error || d.status}</div>`;
+    const [searchRes, tagRes] = await Promise.all([searchPromise, tagPromise]);
+    const searchData = await searchRes.json();
+    const tagData = tagRes ? await tagRes.json() : null;
+
+    extractedAttrs = searchData.attributes || {};
+    extractedTags = tagData?.tags || searchData.tags || [];
+    extractedProductName = myName;
+
+    let html = '';
+    if (Object.keys(extractedAttrs).length) {
+      html += `<div style="margin-top:8px;"><div class="label">속성</div>
+        ${Object.entries(extractedAttrs).map(([k,v])=>`<div class="attr-row"><span class="attr-key">${k}</span><span>${v}</span></div>`).join('')}
+      </div>`;
     }
+    if (extractedTags.length) {
+      html += `<div style="margin-top:8px;"><div class="label">태그</div>
+        <div class="tag-wrap">${extractedTags.map(t=>`<span class="tag">#${t}</span>`).join('')}</div>
+      </div>`;
+    }
+    if (!html) html = '<div style="font-size:12px;color:#aaa;margin-top:8px;">속성/태그 없음</div>';
+    document.getElementById('extractResult').innerHTML = html;
+
   } catch (e) {
     document.getElementById('extractResult').innerHTML = `<div style="font-size:12px;color:#c0392b;margin-top:8px;">오류: ${e.message}</div>`;
   } finally {
