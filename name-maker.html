@@ -378,9 +378,9 @@ async function generateName() {
     if (d.status === 'ok') {
       document.getElementById('generateResult').innerHTML = `
         <div class="result-card">
-          <div class="label" style="margin-bottom:6px;">생성된 상품명</div>
-          <div class="result-name" id="resultName">${d.name}</div>
-          <button class="copy-btn" onclick="copyText('${d.name.replace(/'/g,"\\'")}', this)">복사</button>
+          <div class="label" style="margin-bottom:6px;">생성된 상품명 (수정 가능)</div>
+          <textarea id="resultName" style="width:100%;border:none;background:transparent;font-size:15px;font-weight:700;line-height:1.6;resize:vertical;min-height:60px;outline:none;">${d.name}</textarea>
+          <button class="copy-btn" onclick="copyText(document.getElementById('resultName').value, this)">복사</button>
         </div>`;
     } else {
       document.getElementById('generateResult').innerHTML = `<div style="font-size:12px;color:#c0392b;margin-top:8px;">오류: ${d.error}</div>`;
@@ -396,30 +396,26 @@ async function generateName() {
 async function checkRanks() {
   const nvmid = document.getElementById('myNvmid').value.trim();
   const mainKw = document.getElementById('mainKw').value.trim();
-  const generatedName = document.getElementById('resultName')?.textContent?.trim();
+  const nameEl = document.getElementById('resultName');
+  const generatedName = nameEl ? nameEl.value.trim() : '';
 
   if (!nvmid) return alert('내 상품 nvmid를 입력해주세요 (2번에서 추출 필요)');
   if (!generatedName) return alert('먼저 4번에서 상품명을 생성해주세요');
 
-  // 선택된 조합 크기
   const comboSizes = [];
   if (document.getElementById('combo2').checked) comboSizes.push(2);
   if (document.getElementById('combo3').checked) comboSizes.push(3);
   if (document.getElementById('combo4').checked) comboSizes.push(4);
   if (!comboSizes.length) return alert('단어 조합을 선택해주세요');
 
-  // 상품명에서 단어 추출 (메인키워드 포함)
   const nameWords = generatedName.split(/\s+/).filter(w => w.length >= 2);
   if (!nameWords.includes(mainKw)) nameWords.unshift(mainKw);
 
-  // 조합 생성 함수
   function getCombinations(arr, size) {
     const result = [];
     function helper(start, current) {
       if (current.length === size) { result.push([...current]); return; }
-      for (let i = start; i < arr.length; i++) {
-        helper(i + 1, [...current, arr[i]]);
-      }
+      for (let i = start; i < arr.length; i++) helper(i + 1, [...current, arr[i]]);
     }
     helper(0, []);
     return result;
@@ -427,15 +423,12 @@ async function checkRanks() {
 
   const combos = new Set();
   for (const size of comboSizes) {
-    const combs = getCombinations(nameWords, size);
-    for (const comb of combs) {
-      if (comb.includes(mainKw)) {
-        combos.add(comb.join(' '));
-      }
+    for (const comb of getCombinations(nameWords, size)) {
+      if (comb.includes(mainKw)) combos.add(comb.join(' '));
     }
   }
 
-  const comboList = [...combos]; // 전체 다 체크
+  const comboList = [...combos];
   if (!comboList.length) return alert('조합을 생성할 수 없습니다');
 
   const btn = document.getElementById('rankCheckBtn');
@@ -447,31 +440,37 @@ async function checkRanks() {
   document.getElementById('rankText').textContent = `0 / ${comboList.length}`;
 
   try {
-    const res = await fetch(`${API}/rank-check`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'ngrok-skip-browser-warning': 'true' },
-      body: JSON.stringify({ nvmid, combos: comboList })
-    });
-    const d = await res.json();
+    // 병렬 처리 - 20개씩 묶어서 동시 요청
+    const BATCH = 20;
+    const allResults = [];
+    let done = 0;
 
-    if (d.status === 'ok') {
-      const top4 = d.results.filter(r => r.inTop4);
-      const html = d.results.map(r => {
-        const color = r.rank === 0 ? '#bbb' : r.inTop4 ? '#018d4c' : '#c0392b';
-        const badge = r.rank === 0 ? '미검출' : r.inTop4 ? `✅ ${r.rank}위` : `❌ ${r.rank}위`;
-        return `<div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid #f5f5f5;font-size:12px;">
-          <span>${r.keyword}</span>
-          <span style="color:${color};font-weight:700;">${badge}</span>
-        </div>`;
-      }).join('');
-      document.getElementById('rankResult').innerHTML = `
-        <div style="font-size:12px;font-weight:700;margin-bottom:8px;">
-          4위 이내: ${top4.length}/${d.results.length}개
-        </div>
-        ${html}`;
-    } else {
-      document.getElementById('rankResult').innerHTML = `<div style="color:#c0392b;font-size:12px;">오류: ${d.error}</div>`;
+    for (let i = 0; i < comboList.length; i += BATCH) {
+      const batch = comboList.slice(i, i + BATCH);
+      const res = await fetch(`${API}/rank-check`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'ngrok-skip-browser-warning': 'true' },
+        body: JSON.stringify({ nvmid, combos: batch })
+      });
+      const d = await res.json();
+      if (d.status === 'ok') allResults.push(...d.results);
+      done += batch.length;
+      document.getElementById('rankFill').style.width = `${(done / comboList.length * 100).toFixed(0)}%`;
+      document.getElementById('rankText').textContent = `${done} / ${comboList.length}`;
     }
+
+    const top4 = allResults.filter(r => r.inTop4);
+    const html = allResults.map(r => {
+      const color = r.rank === 0 ? '#bbb' : r.inTop4 ? '#018d4c' : '#c0392b';
+      const badge = r.rank === 0 ? '미검출' : r.inTop4 ? `✅ ${r.rank}위` : `❌ ${r.rank}위`;
+      return `<div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid #f5f5f5;font-size:12px;">
+        <span>${r.keyword}</span>
+        <span style="color:${color};font-weight:700;">${badge}</span>
+      </div>`;
+    }).join('');
+    document.getElementById('rankResult').innerHTML = `
+      <div style="font-size:12px;font-weight:700;margin-bottom:8px;">4위 이내: ${top4.length}/${allResults.length}개</div>
+      ${html}`;
   } catch (e) {
     document.getElementById('rankResult').innerHTML = `<div style="color:#c0392b;font-size:12px;">오류: ${e.message}</div>`;
   } finally {
