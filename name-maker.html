@@ -331,8 +331,6 @@ async function generateName() {
 
   const checkedNames = getCheckedNames();
   const shoppingKws = [...document.querySelectorAll('#kwGrid input:checked')].map(cb => cb.value);
-  const kwExtractCount = parseInt(document.getElementById('keywordExtractCount').value) || 10;
-
   const kwExtractCount = document.getElementById('kwExtractCount').value || 10;
   const btn = document.getElementById('generateBtn');
   btn.disabled = true; btn.textContent = '생성 중...';
