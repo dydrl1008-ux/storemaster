@@ -183,6 +183,11 @@ input:focus { border-color: #03c75a; }
       <label class="kw-chip" id="combo3chip"><input type="checkbox" id="combo3" value="3" onchange="toggleChip(this)" checked>3단어</label>
       <label class="kw-chip" id="combo4chip"><input type="checkbox" id="combo4" value="4" onchange="toggleChip(this)">4단어</label>
     </div>
+    <div class="input-row" style="margin-bottom:8px;align-items:center;gap:8px;">
+      <label style="font-size:12px;color:#555;white-space:nowrap;">랜덤 추출:</label>
+      <input type="number" id="randomCount" placeholder="전체" min="1" style="flex:0 0 80px;padding:6px 10px;border:1.5px solid #ddd;border-radius:8px;font-size:12px;" />
+      <span style="font-size:11px;color:#aaa;">개 (빈칸이면 전체 순열)</span>
+    </div>
     <button class="btn-green" id="rankCheckBtn" onclick="checkRanks()" style="width:100%;">순위 체크</button>
     <div id="rankLoading" class="loading" style="display:none; margin-top:8px;">순위 체크 중...</div>
     <div class="progress-wrap" id="rankProgress">
@@ -452,13 +457,25 @@ async function checkRanks() {
   const comboList = [...combos];
   if (!comboList.length) return alert('조합을 생성할 수 없습니다');
 
+  // 랜덤 추출
+  const randomCount = parseInt(document.getElementById('randomCount').value);
+  let finalList = comboList;
+  if (randomCount && randomCount > 0 && randomCount < comboList.length) {
+    const shuffled = [...comboList];
+    for (let i = shuffled.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+    }
+    finalList = shuffled.slice(0, randomCount);
+  }
+
   const btn = document.getElementById('rankCheckBtn');
   btn.disabled = true; btn.textContent = '체크 중...';
   document.getElementById('rankLoading').style.display = 'block';
   document.getElementById('rankProgress').style.display = 'block';
   document.getElementById('rankResult').innerHTML = '';
   document.getElementById('rankFill').style.width = '0%';
-  document.getElementById('rankText').textContent = `0 / ${comboList.length}`;
+  document.getElementById('rankText').textContent = `0 / ${finalList.length}`;
 
   try {
     // 병렬 처리 - 20개씩 묶어서 동시 요청
@@ -466,8 +483,8 @@ async function checkRanks() {
     const allResults = [];
     let done = 0;
 
-    for (let i = 0; i < comboList.length; i += BATCH) {
-      const batch = comboList.slice(i, i + BATCH);
+    for (let i = 0; i < finalList.length; i += BATCH) {
+      const batch = finalList.slice(i, i + BATCH);
       const res = await fetch(`${API}/rank-check`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'ngrok-skip-browser-warning': 'true' },
@@ -476,9 +493,9 @@ async function checkRanks() {
       const d = await res.json();
       if (d.status === 'ok') allResults.push(...d.results);
       done += batch.length;
-      document.getElementById('rankFill').style.width = `${(done / comboList.length * 100).toFixed(0)}%`;
-      document.getElementById('rankText').textContent = `${done} / ${comboList.length}`;
-      if (i + BATCH < comboList.length) await new Promise(r => setTimeout(r, 500));
+      document.getElementById('rankFill').style.width = `${(done / finalList.length * 100).toFixed(0)}%`;
+      document.getElementById('rankText').textContent = `${done} / ${finalList.length}`;
+      if (i + BATCH < finalList.length) await new Promise(r => setTimeout(r, 500));
     }
 
     const top4 = allResults.filter(r => r.inTop4);
