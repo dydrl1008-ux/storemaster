@@ -411,20 +411,22 @@ async function checkRanks() {
   const nameWords = generatedName.split(/\s+/).filter(w => w.length >= 2);
   if (!nameWords.includes(mainKw)) nameWords.unshift(mainKw);
 
-  function getCombinations(arr, size) {
+  function getPermutations(arr, size) {
     const result = [];
-    function helper(start, current) {
+    function helper(current, remaining) {
       if (current.length === size) { result.push([...current]); return; }
-      for (let i = start; i < arr.length; i++) helper(i + 1, [...current, arr[i]]);
+      for (let i = 0; i < remaining.length; i++) {
+        helper([...current, remaining[i]], [...remaining.slice(0, i), ...remaining.slice(i + 1)]);
+      }
     }
-    helper(0, []);
+    helper([], arr);
     return result;
   }
 
   const combos = new Set();
   for (const size of comboSizes) {
-    for (const comb of getCombinations(nameWords, size)) {
-      if (comb.includes(mainKw)) combos.add(comb.join(' '));
+    for (const perm of getPermutations(nameWords, size)) {
+      if (perm.includes(mainKw)) combos.add(perm.join(' '));
     }
   }
 
@@ -468,9 +470,18 @@ async function checkRanks() {
         <span style="color:${color};font-weight:700;">${badge}</span>
       </div>`;
     }).join('');
+
+    // 노출 키워드만 정리
+    const top4Keywords = top4.map(r => r.keyword).join('\n');
+
     document.getElementById('rankResult').innerHTML = `
       <div style="font-size:12px;font-weight:700;margin-bottom:8px;">4위 이내: ${top4.length}/${allResults.length}개</div>
-      ${html}`;
+      ${html}
+      <div style="margin-top:16px;padding:12px;background:#f0faf5;border:1.5px solid #c5e8d5;border-radius:10px;">
+        <div style="font-size:12px;font-weight:700;color:#018d4c;margin-bottom:6px;">✅ 노출 키워드 정리 (${top4.length}개)</div>
+        <textarea style="width:100%;border:none;background:transparent;font-size:12px;line-height:1.8;resize:vertical;min-height:80px;outline:none;color:#111;">${top4Keywords}</textarea>
+        <button class="copy-btn" style="margin-top:6px;" onclick="copyText(document.querySelector('#rankResult textarea').value, this)">복사</button>
+      </div>`;
   } catch (e) {
     document.getElementById('rankResult').innerHTML = `<div style="color:#c0392b;font-size:12px;">오류: ${e.message}</div>`;
   } finally {
