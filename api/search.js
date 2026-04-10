@@ -6,8 +6,8 @@ export default async function handler(req, res) {
   if (req.method === 'OPTIONS') return res.status(200).end();
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
-  const clientId     = process.env.NAVER_CLIENT_ID;
-  const clientSecret = process.env.NAVER_CLIENT_SECRET;
+const clientId     = 'kxRIN9CvyY8ub4YzeGm0';
+const clientSecret = 'w6YHANdpQD';
   if (!clientId || !clientSecret) return res.status(500).json({ error: 'Naver API key not configured' });
 
   const { keyword, pages = 1 } = req.body;
