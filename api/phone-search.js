@@ -8,6 +8,8 @@ export default async function handler(req, res) {
   const PLACES_KEY = process.env.GOOGLE_PLACES_API_KEY;
   const SEARCH_KEY = process.env.GOOGLE_SEARCH_API_KEY;
   const SEARCH_CX  = process.env.GOOGLE_SEARCH_CX;
+  const NAVER_ID   = process.env.NAVER_CLIENT_ID || 'h8PZ1ORq2eD2fu_yKTsA';
+  const NAVER_SEC  = process.env.NAVER_CLIENT_SECRET || 'ombn3z_Ibn';
 
   const { name } = req.body;
   if (!name) return res.status(400).json({ error: 'name required' });
@@ -16,20 +18,24 @@ export default async function handler(req, res) {
     const matches = text.match(/010[-.\s]?\d{3,4}[-.\s]?\d{4}/g) || [];
     const seen = new Set();
     return matches
-      .map(n => {
-        const digits = n.replace(/[-.\s]/g, '');
-        return digits.replace(/^(\d{3})(\d{3,4})(\d{4})$/, '$1-$2-$3');
-      })
-      .filter(n => {
-        if (seen.has(n)) return false;
-        seen.add(n);
-        return true;
-      });
+      .map(n => n.replace(/[-.\s]/g, '').replace(/^(\d{3})(\d{3,4})(\d{4})$/, '$1-$2-$3'))
+      .filter(n => { if (seen.has(n)) return false; seen.add(n); return true; });
   }
 
-  const result = { query: name, places: [], phones: [], source: null, debug: {} };
+  function mergePhones(arr) {
+    const seen = new Set();
+    return arr.filter(p => {
+      const key = (p.number || p.phone || '').replace(/[-\s]/g, '');
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+  }
 
-  // ── 1단계: Places API ────────────────────────────────
+  const allPhones = [];
+  const sources = [];
+
+  // ── 1: Places API ────────────────────────────────────
   if (PLACES_KEY) {
     try {
       const r = await fetch('https://places.googleapis.com/v1/places:searchText', {
@@ -42,67 +48,68 @@ export default async function handler(req, res) {
         body: JSON.stringify({ textQuery: name, languageCode: 'ko', regionCode: 'KR', maxResultCount: 5 })
       });
       const data = await r.json();
-      result.debug.placesRaw = data;
-
-      result.places = (data.places || []).map(p => ({
-        bizName: p.displayName?.text || '',
-        address: p.formattedAddress || '',
-        phone: p.nationalPhoneNumber || p.internationalPhoneNumber || '',
-        website: p.websiteUri || '',
-        is010: /^010/.test((p.nationalPhoneNumber || '').replace(/[-\s]/g, ''))
-      }));
-
-      const nums010 = result.places.filter(p => p.is010).map(p => ({ number: p.phone, source: 'places', bizName: p.bizName, address: p.address }));
-      if (nums010.length) {
-        result.phones = nums010;
-        result.source = 'places';
-        return res.status(200).json(result);
+      for (const p of (data.places || [])) {
+        const phone = p.nationalPhoneNumber || p.internationalPhoneNumber || '';
+        if (/^010/.test(phone.replace(/[-\s]/g, ''))) {
+          allPhones.push({
+            number: phone,
+            source: 'places',
+            bizName: p.displayName?.text || '',
+            address: p.formattedAddress || ''
+          });
+        }
       }
-    } catch (e) {
-      result.debug.placesError = e.message;
-    }
-  } else {
-    result.debug.placesError = 'PLACES_KEY not set';
+      if (allPhones.length) sources.push('places');
+    } catch(e) {}
   }
 
-  // ── 2단계: Google Custom Search API 폴백 ─────────────
+  // ── 2: Google Custom Search ───────────────────────────
   if (SEARCH_KEY && SEARCH_CX) {
     try {
-      const queries = [`"${name}" 010`, `"${name}" 연락처 휴대폰`, `"${name}" 대표번호 010`];
-      const allNums = [];
-      const searchDebug = [];
-
-      for (const q of queries) {
-        const url = `https://www.googleapis.com/customsearch/v1?key=${SEARCH_KEY}&cx=${SEARCH_CX}&q=${encodeURIComponent(q)}&num=5&gl=kr&hl=ko`;
-        const r = await fetch(url);
+      const q = encodeURIComponent(`"${name}" 010`);
+      const url = `https://www.googleapis.com/customsearch/v1?key=${SEARCH_KEY}&cx=${SEARCH_CX}&q=${q}&num=10&gl=kr&hl=ko`;
+      const r = await fetch(url);
+      if (r.ok) {
         const data = await r.json();
-        searchDebug.push({ q, status: r.status, items: (data.items || []).length, error: data.error?.message });
-        if (!r.ok) continue;
         for (const item of (data.items || [])) {
           const text = [item.title, item.snippet, item.htmlSnippet].join(' ');
-          const nums = extract010(text);
-          for (const n of nums) {
-            if (!allNums.find(x => x.number === n)) {
-              allNums.push({ number: n, source: 'search', snippet: item.snippet?.slice(0, 80) || '', link: item.link || '' });
-            }
+          for (const n of extract010(text)) {
+            allPhones.push({ number: n, source: 'google', snippet: item.snippet?.slice(0, 80) || '', link: item.link || '' });
           }
         }
-        if (allNums.length >= 3) break;
+        if (data.items?.length) sources.push('google');
       }
-
-      result.debug.searchDebug = searchDebug;
-      if (allNums.length) {
-        result.phones = allNums;
-        result.source = 'search';
-        return res.status(200).json(result);
-      }
-    } catch (e) {
-      result.debug.searchError = e.message;
-    }
-  } else {
-    result.debug.searchMissing = `SEARCH_KEY: ${!!SEARCH_KEY}, SEARCH_CX: ${!!SEARCH_CX}`;
+    } catch(e) {}
   }
 
-  result.source = 'none';
-  return res.status(200).json(result);
+  // ── 3: Naver 웹문서 검색 ──────────────────────────────
+  if (NAVER_ID && NAVER_SEC) {
+    try {
+      const queries = [`${name} 010`, `${name} 연락처`];
+      for (const q of queries) {
+        const url = `https://openapi.naver.com/v1/search/webkr.json?query=${encodeURIComponent(q)}&display=5`;
+        const r = await fetch(url, {
+          headers: { 'X-Naver-Client-Id': NAVER_ID, 'X-Naver-Client-Secret': NAVER_SEC }
+        });
+        if (!r.ok) continue;
+        const data = await r.json();
+        for (const item of (data.items || [])) {
+          const text = [item.title, item.description].join(' ').replace(/<[^>]+>/g, '');
+          for (const n of extract010(text)) {
+            allPhones.push({ number: n, source: 'naver', snippet: item.description?.replace(/<[^>]+>/g, '').slice(0, 80) || '', link: item.link || '' });
+          }
+        }
+      }
+      if (allPhones.some(p => p.source === 'naver')) sources.push('naver');
+    } catch(e) {}
+  }
+
+  const phones = mergePhones(allPhones);
+
+  return res.status(200).json({
+    query: name,
+    phones,
+    sources,
+    source: phones.length ? sources[0] : 'none'
+  });
 }
