@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>업체 번호 찾기 | Store Master</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, 'Pretendard', sans-serif; background: #f5f5f5; color: #111; min-height: 100vh; padding: 2rem 1rem; }
+  .container { max-width: 700px; margin: 0 auto; }
+  h1 { font-size: 20px; font-weight: 600; margin-bottom: 4px; }
+  .sub { font-size: 13px; color: #888; margin-bottom: 1.5rem; }
+  .card { background: #fff; border-radius: 12px; border: 1px solid #e5e5e5; padding: 1.25rem; margin-bottom: 1rem; }
+  label { font-size: 13px; color: #555; display: block; margin-bottom: 6px; }
+  textarea {
+    width: 100%; min-height: 130px; padding: 10px 12px;
+    border: 1px solid #ddd; border-radius: 8px;
+    font-size: 14px; font-family: inherit; resize: vertical; line-height: 1.6;
+    background: #fafafa; color: #111;
+  }
+  textarea:focus { outline: none; border-color: #888; background: #fff; }
+  .counter { font-size: 12px; color: #aaa; margin-top: 5px; }
+  .btn-row { display: flex; gap: 8px; margin-top: 10px; }
+  button {
+    padding: 9px 20px; border-radius: 8px; font-size: 14px;
+    cursor: pointer; border: 1px solid #ddd; background: #fff; color: #111;
+    transition: background 0.15s;
+  }
+  button:hover { background: #f0f0f0; }
+  button.primary { background: #111; color: #fff; border-color: #111; }
+  button.primary:hover { background: #333; }
+  button:disabled { opacity: 0.4; cursor: not-allowed; }
+  .tip { font-size: 12px; color: #aaa; margin-top: 10px; line-height: 1.6; }
+
+  .results { margin-top: 1.5rem; }
+  .result-item { background: #fff; border: 1px solid #e5e5e5; border-radius: 12px; margin-bottom: 10px; overflow: hidden; }
+  .result-header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 10px 14px; background: #f9f9f9; border-bottom: 1px solid #eee;
+  }
+  .biz-name { font-size: 14px; font-weight: 600; }
+  .badge { font-size: 11px; padding: 2px 9px; border-radius: 20px; border: 1px solid; }
+  .badge-loading { background: #fffbe6; color: #a16207; border-color: #fbbf24; }
+  .badge-010     { background: #f0fdf4; color: #15803d; border-color: #4ade80; }
+  .badge-search  { background: #eff6ff; color: #1d4ed8; border-color: #60a5fa; }
+  .badge-none    { background: #fef2f2; color: #b91c1c; border-color: #f87171; }
+
+  .phone-block { padding: 10px 14px; border-bottom: 1px solid #f5f5f5; }
+  .phone-block:last-child { border-bottom: none; }
+  .phone-row { display: flex; align-items: center; gap: 8px; }
+  .phone-num { font-size: 15px; font-weight: 600; flex: 1; }
+  .phone-num.is010 { color: #15803d; }
+  .source-tag {
+    font-size: 10px; padding: 1px 6px; border-radius: 4px;
+    background: #f0f0f0; color: #888;
+  }
+  .source-tag.places { background: #f0fdf4; color: #15803d; }
+  .source-tag.search { background: #eff6ff; color: #1d4ed8; }
+  .copy-btn {
+    font-size: 11px; padding: 2px 8px; border: 1px solid #ddd;
+    border-radius: 6px; background: #fff; cursor: pointer; color: #555;
+  }
+  .copy-btn:hover { background: #f5f5f5; }
+  .phone-meta { font-size: 11px; color: #aaa; margin-top: 3px; line-height: 1.5; }
+  .phone-meta a { color: #60a5fa; text-decoration: none; }
+
+  .empty-msg { padding: 12px 14px; font-size: 13px; color: #aaa; }
+  .export-row { display: flex; justify-content: flex-end; margin-top: 8px; }
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>📞 업체 번호 찾기</h1>
+  <p class="sub">구글 플레이스 → 웹 검색 순으로 010 번호 탐색</p>
+
+  <div class="card">
+    <label>업체명 입력 (한 줄에 하나씩)</label>
+    <textarea id="bizInput" placeholder="유노애드
+고트마케팅
+홍길동치킨 강남점"></textarea>
+    <div class="counter" id="counter">0개 업체</div>
+    <div class="btn-row">
+      <button class="primary" id="searchBtn" onclick="startSearch()">검색 시작</button>
+      <button onclick="clearAll()">초기화</button>
+    </div>
+    <p class="tip">
+      · 1순위: 구글 플레이스 (빠름, 등록 업체만)<br>
+      · 2순위: 구글 검색 (블로그·SNS·홈페이지에서 010 번호 추출)<br>
+      · 정확도를 높이려면 업체명 + 지역명 함께 입력 (예: 홍길동치킨 강남)
+    </p>
+  </div>
+
+  <div class="results" id="results"></div>
+  <div class="export-row" id="exportRow" style="display:none">
+    <button onclick="exportCSV()">CSV 내보내기</button>
+  </div>
+</div>
+
+<script>
+let allResults = {};
+
+document.getElementById('bizInput').addEventListener('input', function() {
+  document.getElementById('counter').textContent = parseNames(this.value).length + '개 업체';
+});
+
+function parseNames(text) {
+  return text.split(/\n/).map(s => s.trim()).filter(Boolean);
+}
+
+function clearAll() {
+  document.getElementById('bizInput').value = '';
+  document.getElementById('counter').textContent = '0개 업체';
+  document.getElementById('results').innerHTML = '';
+  document.getElementById('exportRow').style.display = 'none';
+  allResults = {};
+}
+
+async function startSearch() {
+  const names = parseNames(document.getElementById('bizInput').value);
+  if (!names.length) return;
+
+  allResults = {};
+  document.getElementById('results').innerHTML = '';
+  document.getElementById('exportRow').style.display = 'none';
+
+  const btn = document.getElementById('searchBtn');
+  btn.disabled = true; btn.textContent = '검색 중...';
+
+  for (const name of names) {
+    allResults[name] = { status: 'loading', phones: [], source: null };
+    renderItem(name);
+  }
+  for (const name of names) {
+    await searchPhone(name);
+  }
+
+  btn.disabled = false; btn.textContent = '검색 시작';
+  if (Object.values(allResults).some(r => r.phones.length)) {
+    document.getElementById('exportRow').style.display = 'flex';
+  }
+}
+
+async function searchPhone(name) {
+  try {
+    const res = await fetch('/api/phone-search', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name })
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'API 오류');
+    allResults[name] = {
+      status: data.phones.length ? 'found' : 'none',
+      phones: data.phones,
+      places: data.places || [],
+      source: data.source
+    };
+  } catch(e) {
+    allResults[name] = { status: 'error', phones: [], source: null, error: e.message };
+  }
+  renderItem(name);
+}
+
+function safeId(name) {
+  return 'r_' + name.replace(/[^a-zA-Z0-9가-힣]/g, '_');
+}
+
+function renderItem(name) {
+  const r = allResults[name];
+  let el = document.getElementById(safeId(name));
+  if (!el) {
+    el = document.createElement('div');
+    el.className = 'result-item';
+    el.id = safeId(name);
+    document.getElementById('results').appendChild(el);
+  }
+
+  let badgeClass, badgeText;
+  if (r.status === 'loading') {
+    badgeClass = 'badge-loading'; badgeText = '검색 중...';
+  } else if (!r.phones.length) {
+    badgeClass = 'badge-none'; badgeText = '없음';
+  } else if (r.source === 'places') {
+    badgeClass = 'badge-010'; badgeText = '플레이스 발견';
+  } else {
+    badgeClass = 'badge-search'; badgeText = '웹 검색 발견';
+  }
+
+  let body = '';
+  if (r.status === 'loading') {
+    body = `<div class="empty-msg">검색 중...</div>`;
+  } else if (!r.phones.length) {
+    body = `<div class="empty-msg">번호를 찾지 못했습니다.${r.error ? ' — ' + r.error : ''}</div>`;
+  } else {
+    body = r.phones.map(p => {
+      const num = p.number || p.phone || '';
+      const srcLabel = p.source === 'places' ? 'places' : 'search';
+      const meta = p.address
+        ? `<div class="phone-meta">${p.bizName || ''} ${p.address}</div>`
+        : p.snippet
+        ? `<div class="phone-meta">${p.snippet}${p.link ? ` <a href="${p.link}" target="_blank">→ 링크</a>` : ''}</div>`
+        : '';
+      return `
+        <div class="phone-block">
+          <div class="phone-row">
+            <span class="phone-num is010">${num}</span>
+            <span class="source-tag ${srcLabel}">${srcLabel === 'places' ? '플레이스' : '웹검색'}</span>
+            <button class="copy-btn" onclick="copyNum('${num}', this)">복사</button>
+          </div>
+          ${meta}
+        </div>`;
+    }).join('');
+  }
+
+  el.innerHTML = `
+    <div class="result-header">
+      <span class="biz-name">${name}</span>
+      <span class="badge ${badgeClass}">${badgeText}</span>
+    </div>
+    ${body}
+  `;
+}
+
+function copyNum(num, btn) {
+  navigator.clipboard.writeText(num).then(() => {
+    btn.textContent = '완료';
+    setTimeout(() => btn.textContent = '복사', 1500);
+  });
+}
+
+function exportCSV() {
+  let csv = '검색어,전화번호,출처,부가정보\n';
+  for (const [name, r] of Object.entries(allResults)) {
+    if (!r.phones.length) {
+      csv += `"${name}","","",""\n`;
+    } else {
+      for (const p of r.phones) {
+        const num = p.number || p.phone || '';
+        const src = p.source || '';
+        const info = p.address || p.snippet || '';
+        csv += `"${name}","${num}","${src}","${info.replace(/"/g, "'")}"\n`;
+      }
+    }
+  }
+  const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob); a.download = '업체번호_검색결과.csv'; a.click();
+}
+</script>
+</body>
+</html>
