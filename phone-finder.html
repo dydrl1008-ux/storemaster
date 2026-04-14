@@ -191,7 +191,7 @@ async function searchPhone(name) {
   let phones = [];
   let sources = [];
 
-  // 1. Vercel API (구글+네이버)
+  // 1. Vercel API 먼저
   try {
     const r = await fetch('/api/phone-search', {
       method: 'POST',
@@ -205,29 +205,43 @@ async function searchPhone(name) {
     }
   } catch(e) {}
 
-  // 2. 로컬 서버 (오픈마켓) - 병렬로 실행
+  // 2. 로컬 서버 (Vercel 끝난 후 순차 처리)
   if (localServerOn) {
     try {
-      const r = await fetch(LOCAL_API + '/phone-search', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'ngrok-skip-browser-warning': 'true' },
-        body: JSON.stringify({ name }),
-        signal: AbortSignal.timeout(60000)
-      });
-      const d = await r.json();
-      if (r.ok && d.phones) {
-        // 중복 제거 후 추가
+      let localPhones = null;
+      // queued 응답이면 재시도
+      for (let attempt = 0; attempt < 60; attempt++) {
+        const r = await fetch(LOCAL_API + '/phone-search', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'ngrok-skip-browser-warning': 'true' },
+          body: JSON.stringify({ name }),
+          signal: AbortSignal.timeout(120000)
+        });
+        const d = await r.json();
+        if (r.status === 202 && d.status === 'queued') {
+          // 처리중 메시지 업데이트
+          allResults[name] = { ...allResults[name], queueMsg: d.message };
+          renderItem(name);
+          await new Promise(res => setTimeout(res, 3000)); // 3초 후 재시도
+          continue;
+        }
+        if (r.ok && d.phones) {
+          localPhones = d;
+        }
+        break;
+      }
+      if (localPhones) {
         const existingNums = new Set(phones.map(p => (p.number || '').replace(/[-\s]/g, '')));
-        for (const p of d.phones) {
+        for (const p of localPhones.phones) {
           const key = (p.number || '').replace(/[-\s]/g, '');
           if (!existingNums.has(key)) {
             phones.push(p);
             existingNums.add(key);
           }
         }
-        sources = [...new Set([...sources, ...(d.sources || [])])];
+        sources = [...new Set([...sources, ...(localPhones.sources || [])])];
       }
-    } catch(e) {}
+    } catch(e) { console.log('로컬 서버 오류:', e); }
   }
 
   allResults[name] = {
@@ -269,7 +283,7 @@ function renderItem(name) {
 
   let body = '';
   if (isLoading) {
-    body = `<div class="empty-msg">검색 중...</div>`;
+    body = `<div class="empty-msg">검색 중...${r.queueMsg ? '<br><span style="color:#a16207">' + r.queueMsg + '</span>' : ''}</div>`;
   } else if (!r.phones.length) {
     body = `<div class="empty-msg">010 번호를 찾지 못했습니다.</div>
       <div class="searched-msg">검색 완료: ${Object.values(allSrcs).join(' · ')}</div>`;
