@@ -9,7 +9,13 @@
   body { font-family: -apple-system, 'Pretendard', sans-serif; background: #f5f5f5; color: #111; min-height: 100vh; padding: 2rem 1rem; }
   .container { max-width: 700px; margin: 0 auto; }
   h1 { font-size: 20px; font-weight: 600; margin-bottom: 4px; }
-  .sub { font-size: 13px; color: #888; margin-bottom: 1.5rem; }
+  .sub { font-size: 13px; color: #888; margin-bottom: 1rem; }
+
+  .server-status { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; padding: 4px 10px; border-radius: 20px; border: 1px solid #ddd; background: #f8f8f8; color: #888; margin-bottom: 1.2rem; }
+  .server-status.ok { border-color: #c5e8d5; background: #f0faf5; color: #018d4c; }
+  .server-status.err { border-color: #fcc; background: #fff5f5; color: #c0392b; }
+  .sdot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+
   .card { background: #fff; border-radius: 12px; border: 1px solid #e5e5e5; padding: 1.25rem; margin-bottom: 1rem; }
   label { font-size: 13px; color: #555; display: block; margin-bottom: 6px; }
   textarea {
@@ -41,21 +47,34 @@
   .biz-name { font-size: 14px; font-weight: 600; }
   .badge { font-size: 11px; padding: 2px 9px; border-radius: 20px; border: 1px solid; }
   .badge-loading { background: #fffbe6; color: #a16207; border-color: #fbbf24; }
-  .badge-010     { background: #f0fdf4; color: #15803d; border-color: #4ade80; }
-  .badge-search  { background: #eff6ff; color: #1d4ed8; border-color: #60a5fa; }
+  .badge-found   { background: #f0fdf4; color: #15803d; border-color: #4ade80; }
   .badge-none    { background: #fef2f2; color: #b91c1c; border-color: #f87171; }
+
+  .search-status {
+    display: flex; flex-wrap: wrap; gap: 4px;
+    padding: 8px 14px; border-bottom: 1px solid #f0f0f0; background: #fafafa;
+  }
+  .src-tag { font-size: 10px; padding: 1px 7px; border-radius: 4px; border: 1px solid #e0e0e0; color: #999; background: #fff; }
+  .src-tag.hit { background: #f0fdf4; color: #15803d; border-color: #4ade80; }
+  .src-tag.miss { background: #fafafa; color: #ccc; border-color: #eee; }
+  .src-tag.searching { background: #fffbe6; color: #a16207; border-color: #fbbf24; }
+  .src-tag.skip { background: #f5f5f5; color: #ccc; border-color: #eee; text-decoration: line-through; }
 
   .phone-block { padding: 10px 14px; border-bottom: 1px solid #f5f5f5; }
   .phone-block:last-child { border-bottom: none; }
   .phone-row { display: flex; align-items: center; gap: 8px; }
-  .phone-num { font-size: 15px; font-weight: 600; flex: 1; }
-  .phone-num.is010 { color: #15803d; }
-  .source-tag {
-    font-size: 10px; padding: 1px 6px; border-radius: 4px;
-    background: #f0f0f0; color: #888;
-  }
-  .source-tag.places { background: #f0fdf4; color: #15803d; }
-  .source-tag.search { background: #eff6ff; color: #1d4ed8; }
+  .phone-num { font-size: 15px; font-weight: 600; flex: 1; color: #15803d; }
+  .source-label { font-size: 10px; padding: 1px 6px; border-radius: 4px; background: #f0f0f0; color: #888; }
+  .source-label.places { background: #eff6ff; color: #1d4ed8; }
+  .source-label.google { background: #fef9c3; color: #854d0e; }
+  .source-label.blog   { background: #f0fdf4; color: #15803d; }
+  .source-label.cafe   { background: #fdf4ff; color: #7e22ce; }
+  .source-label.webkr  { background: #f0f9ff; color: #0369a1; }
+  .source-label.kin    { background: #fff7ed; color: #c2410c; }
+  .source-label.쿠팡   { background: #fff1f0; color: #cf1322; }
+  .source-label.G마켓  { background: #fff7e6; color: #d46b08; }
+  .source-label.11번가 { background: #fff0f6; color: #c41d7f; }
+  .source-label.옥션   { background: #f0f5ff; color: #1d39c4; }
   .copy-btn {
     font-size: 11px; padding: 2px 8px; border: 1px solid #ddd;
     border-radius: 6px; background: #fff; cursor: pointer; color: #555;
@@ -63,15 +82,19 @@
   .copy-btn:hover { background: #f5f5f5; }
   .phone-meta { font-size: 11px; color: #aaa; margin-top: 3px; line-height: 1.5; }
   .phone-meta a { color: #60a5fa; text-decoration: none; }
-
   .empty-msg { padding: 12px 14px; font-size: 13px; color: #aaa; }
+  .searched-msg { font-size: 11px; color: #bbb; padding: 4px 14px 10px; }
   .export-row { display: flex; justify-content: flex-end; margin-top: 8px; }
 </style>
 </head>
 <body>
 <div class="container">
   <h1>📞 업체 번호 찾기</h1>
-  <p class="sub">구글 플레이스 → 웹 검색 순으로 010 번호 탐색</p>
+  <p class="sub">구글 · 네이버 · 오픈마켓 동시 탐색</p>
+
+  <div class="server-status" id="serverStatus">
+    <div class="sdot"></div><span>로컬 서버 확인 중...</span>
+  </div>
 
   <div class="card">
     <label>업체명 입력 (한 줄에 하나씩)</label>
@@ -83,11 +106,7 @@
       <button class="primary" id="searchBtn" onclick="startSearch()">검색 시작</button>
       <button onclick="clearAll()">초기화</button>
     </div>
-    <p class="tip">
-      · 1순위: 구글 플레이스 (빠름, 등록 업체만)<br>
-      · 2순위: 구글 검색 (블로그·SNS·홈페이지에서 010 번호 추출)<br>
-      · 정확도를 높이려면 업체명 + 지역명 함께 입력 (예: 홍길동치킨 강남)
-    </p>
+    <p class="tip">· 로컬 서버 켜져 있으면 쿠팡/G마켓/11번가/옥션도 탐색<br>· 정확도를 높이려면 업체명 + 지역명 함께 입력</p>
   </div>
 
   <div class="results" id="results"></div>
@@ -97,7 +116,37 @@
 </div>
 
 <script>
+const LOCAL_API = 'https://undeposable-inarguably-renna.ngrok-free.dev';
+let localServerOn = false;
 let allResults = {};
+
+const VERCEL_SOURCES = {
+  places: '구글 플레이스', google: '구글 검색',
+  blog: '네이버 블로그', cafe: '네이버 카페',
+  webkr: '네이버 웹문서', kin: '네이버 지식인'
+};
+const LOCAL_SOURCES = {
+  쿠팡: '쿠팡', G마켓: 'G마켓', '11번가': '11번가', 옥션: '옥션'
+};
+
+async function checkServer() {
+  const el = document.getElementById('serverStatus');
+  try {
+    const r = await fetch(LOCAL_API + '/health', { headers: { 'ngrok-skip-browser-warning': 'true' }, signal: AbortSignal.timeout(3000) });
+    const d = await r.json();
+    if (d.status === 'ok') {
+      localServerOn = true;
+      el.className = 'server-status ok';
+      el.innerHTML = '<div class="sdot"></div><span>로컬 서버 연결됨 (오픈마켓 탐색 가능)</span>';
+      return;
+    }
+  } catch {}
+  localServerOn = false;
+  el.className = 'server-status err';
+  el.innerHTML = '<div class="sdot"></div><span>로컬 서버 오프라인 (오픈마켓 탐색 불가)</span>';
+}
+checkServer();
+setInterval(checkServer, 15000);
 
 document.getElementById('bizInput').addEventListener('input', function() {
   document.getElementById('counter').textContent = parseNames(this.value).length + '개 업체';
@@ -118,16 +167,14 @@ function clearAll() {
 async function startSearch() {
   const names = parseNames(document.getElementById('bizInput').value);
   if (!names.length) return;
-
   allResults = {};
   document.getElementById('results').innerHTML = '';
   document.getElementById('exportRow').style.display = 'none';
-
   const btn = document.getElementById('searchBtn');
   btn.disabled = true; btn.textContent = '검색 중...';
 
   for (const name of names) {
-    allResults[name] = { status: 'loading', phones: [], source: null };
+    allResults[name] = { status: 'loading', phones: [], sources: [] };
     renderItem(name);
   }
   for (const name of names) {
@@ -141,23 +188,54 @@ async function startSearch() {
 }
 
 async function searchPhone(name) {
+  let phones = [];
+  let sources = [];
+
+  // 1. Vercel API (구글+네이버)
   try {
-    const res = await fetch('/api/phone-search', {
+    const r = await fetch('/api/phone-search', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ name })
     });
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.error || 'API 오류');
-    allResults[name] = {
-      status: data.phones.length ? 'found' : 'none',
-      phones: data.phones,
-      places: data.places || [],
-      source: data.source
-    };
-  } catch(e) {
-    allResults[name] = { status: 'error', phones: [], source: null, error: e.message };
+    const d = await r.json();
+    if (r.ok && d.phones) {
+      phones = [...phones, ...d.phones];
+      sources = [...sources, ...(d.sources || [])];
+    }
+  } catch(e) {}
+
+  // 2. 로컬 서버 (오픈마켓) - 병렬로 실행
+  if (localServerOn) {
+    try {
+      const r = await fetch(LOCAL_API + '/phone-search', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'ngrok-skip-browser-warning': 'true' },
+        body: JSON.stringify({ name }),
+        signal: AbortSignal.timeout(30000)
+      });
+      const d = await r.json();
+      if (r.ok && d.phones) {
+        // 중복 제거 후 추가
+        const existingNums = new Set(phones.map(p => (p.number || '').replace(/[-\s]/g, '')));
+        for (const p of d.phones) {
+          const key = (p.number || '').replace(/[-\s]/g, '');
+          if (!existingNums.has(key)) {
+            phones.push(p);
+            existingNums.add(key);
+          }
+        }
+        sources = [...new Set([...sources, ...(d.sources || [])])];
+      }
+    } catch(e) {}
   }
+
+  allResults[name] = {
+    status: phones.length ? 'found' : 'none',
+    phones,
+    sources,
+    localUsed: localServerOn
+  };
   renderItem(name);
 }
 
@@ -175,36 +253,42 @@ function renderItem(name) {
     document.getElementById('results').appendChild(el);
   }
 
-  let badgeClass, badgeText;
-  if (r.status === 'loading') {
-    badgeClass = 'badge-loading'; badgeText = '검색 중...';
-  } else if (!r.phones.length) {
-    badgeClass = 'badge-none'; badgeText = '없음';
-  } else if (r.source === 'places') {
-    badgeClass = 'badge-010'; badgeText = '플레이스 발견';
-  } else {
-    badgeClass = 'badge-search'; badgeText = '웹 검색 발견';
-  }
+  const isLoading = r.status === 'loading';
+  const badgeClass = isLoading ? 'badge-loading' : r.phones.length ? 'badge-found' : 'badge-none';
+  const badgeText = isLoading ? '검색 중...' : r.phones.length ? `${r.phones.length}개 발견` : '없음';
+
+  // 출처 태그
+  const allSrcs = { ...VERCEL_SOURCES, ...(r.localUsed !== false ? LOCAL_SOURCES : {}) };
+  const hitSources = new Set(r.sources || []);
+  const srcTagsHtml = isLoading
+    ? Object.entries(allSrcs).map(([k, v]) => `<span class="src-tag searching">${v}</span>`).join('')
+    : Object.entries(allSrcs).map(([k, v]) => {
+        const cls = hitSources.has(k) ? 'hit' : 'miss';
+        return `<span class="src-tag ${cls}">${v}</span>`;
+      }).join('') + (!r.localUsed && !isLoading ? '<span class="src-tag skip">쿠팡</span><span class="src-tag skip">G마켓</span><span class="src-tag skip">11번가</span><span class="src-tag skip">옥션</span>' : '');
 
   let body = '';
-  if (r.status === 'loading') {
+  if (isLoading) {
     body = `<div class="empty-msg">검색 중...</div>`;
   } else if (!r.phones.length) {
-    body = `<div class="empty-msg">번호를 찾지 못했습니다.${r.error ? ' — ' + r.error : ''}</div>`;
+    body = `<div class="empty-msg">010 번호를 찾지 못했습니다.</div>
+      <div class="searched-msg">검색 완료: ${Object.values(allSrcs).join(' · ')}</div>`;
   } else {
     body = r.phones.map(p => {
-      const num = p.number || p.phone || '';
-      const srcLabel = p.source === 'places' ? 'places' : 'search';
+      const num = p.number || '';
+      const src = p.source || '';
+      const srcKey = src.replace(/\s/g, '');
       const meta = p.address
-        ? `<div class="phone-meta">${p.bizName || ''} ${p.address}</div>`
+        ? `<div class="phone-meta">${p.bizName || ''} · ${p.address}</div>`
         : p.snippet
         ? `<div class="phone-meta">${p.snippet}${p.link ? ` <a href="${p.link}" target="_blank">→ 링크</a>` : ''}</div>`
         : '';
+      const srcLabel = VERCEL_SOURCES[src] || LOCAL_SOURCES[src] || src;
       return `
         <div class="phone-block">
           <div class="phone-row">
-            <span class="phone-num is010">${num}</span>
-            <span class="source-tag ${srcLabel}">${srcLabel === 'places' ? '플레이스' : '웹검색'}</span>
+            <span class="phone-num">${num}</span>
+            <span class="source-label ${srcKey}">${srcLabel}</span>
             <button class="copy-btn" onclick="copyNum('${num}', this)">복사</button>
           </div>
           ${meta}
@@ -217,6 +301,7 @@ function renderItem(name) {
       <span class="biz-name">${name}</span>
       <span class="badge ${badgeClass}">${badgeText}</span>
     </div>
+    <div class="search-status">${srcTagsHtml}</div>
     ${body}
   `;
 }
@@ -229,16 +314,16 @@ function copyNum(num, btn) {
 }
 
 function exportCSV() {
+  const allSrcs = { ...VERCEL_SOURCES, ...LOCAL_SOURCES };
   let csv = '검색어,전화번호,출처,부가정보\n';
   for (const [name, r] of Object.entries(allResults)) {
     if (!r.phones.length) {
       csv += `"${name}","","",""\n`;
     } else {
       for (const p of r.phones) {
-        const num = p.number || p.phone || '';
-        const src = p.source || '';
-        const info = p.address || p.snippet || '';
-        csv += `"${name}","${num}","${src}","${info.replace(/"/g, "'")}"\n`;
+        const src = allSrcs[p.source] || p.source || '';
+        const info = (p.address || p.snippet || '').replace(/"/g, "'");
+        csv += `"${name}","${p.number}","${src}","${info}"\n`;
       }
     }
   }
