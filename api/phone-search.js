@@ -12,7 +12,6 @@ export default async function handler(req, res) {
   const { name } = req.body;
   if (!name) return res.status(400).json({ error: 'name required' });
 
-  // ── 010 번호 추출 헬퍼 ──────────────────────────────
   function extract010(text) {
     const matches = text.match(/010[-.\s]?\d{3,4}[-.\s]?\d{4}/g) || [];
     const seen = new Set();
@@ -28,12 +27,7 @@ export default async function handler(req, res) {
       });
   }
 
-  const result = {
-    query: name,
-    places: [],
-    phones: [],
-    source: null
-  };
+  const result = { query: name, places: [], phones: [], source: null, debug: {} };
 
   // ── 1단계: Places API ────────────────────────────────
   if (PLACES_KEY) {
@@ -45,14 +39,11 @@ export default async function handler(req, res) {
           'X-Goog-Api-Key': PLACES_KEY,
           'X-Goog-FieldMask': 'places.displayName,places.formattedAddress,places.nationalPhoneNumber,places.internationalPhoneNumber,places.websiteUri'
         },
-        body: JSON.stringify({
-          textQuery: name,
-          languageCode: 'ko',
-          regionCode: 'KR',
-          maxResultCount: 5
-        })
+        body: JSON.stringify({ textQuery: name, languageCode: 'ko', regionCode: 'KR', maxResultCount: 5 })
       });
       const data = await r.json();
+      result.debug.placesRaw = data;
+
       result.places = (data.places || []).map(p => ({
         bizName: p.displayName?.text || '',
         address: p.formattedAddress || '',
@@ -61,60 +52,55 @@ export default async function handler(req, res) {
         is010: /^010/.test((p.nationalPhoneNumber || '').replace(/[-\s]/g, ''))
       }));
 
-      const nums010 = result.places
-        .filter(p => p.is010)
-        .map(p => ({ number: p.phone, source: 'places', bizName: p.bizName, address: p.address }));
-
+      const nums010 = result.places.filter(p => p.is010).map(p => ({ number: p.phone, source: 'places', bizName: p.bizName, address: p.address }));
       if (nums010.length) {
         result.phones = nums010;
         result.source = 'places';
         return res.status(200).json(result);
       }
     } catch (e) {
-      result.placesError = e.message;
+      result.debug.placesError = e.message;
     }
+  } else {
+    result.debug.placesError = 'PLACES_KEY not set';
   }
 
   // ── 2단계: Google Custom Search API 폴백 ─────────────
   if (SEARCH_KEY && SEARCH_CX) {
     try {
-      const queries = [
-        `"${name}" 010`,
-        `"${name}" 연락처 휴대폰`,
-        `"${name}" 대표번호 010`
-      ];
-
+      const queries = [`"${name}" 010`, `"${name}" 연락처 휴대폰`, `"${name}" 대표번호 010`];
       const allNums = [];
+      const searchDebug = [];
+
       for (const q of queries) {
         const url = `https://www.googleapis.com/customsearch/v1?key=${SEARCH_KEY}&cx=${SEARCH_CX}&q=${encodeURIComponent(q)}&num=5&gl=kr&hl=ko`;
         const r = await fetch(url);
-        if (!r.ok) continue;
         const data = await r.json();
+        searchDebug.push({ q, status: r.status, items: (data.items || []).length, error: data.error?.message });
+        if (!r.ok) continue;
         for (const item of (data.items || [])) {
           const text = [item.title, item.snippet, item.htmlSnippet].join(' ');
           const nums = extract010(text);
           for (const n of nums) {
             if (!allNums.find(x => x.number === n)) {
-              allNums.push({
-                number: n,
-                source: 'search',
-                snippet: item.snippet?.slice(0, 80) || '',
-                link: item.link || ''
-              });
+              allNums.push({ number: n, source: 'search', snippet: item.snippet?.slice(0, 80) || '', link: item.link || '' });
             }
           }
         }
         if (allNums.length >= 3) break;
       }
 
+      result.debug.searchDebug = searchDebug;
       if (allNums.length) {
         result.phones = allNums;
         result.source = 'search';
         return res.status(200).json(result);
       }
     } catch (e) {
-      result.searchError = e.message;
+      result.debug.searchError = e.message;
     }
+  } else {
+    result.debug.searchMissing = `SEARCH_KEY: ${!!SEARCH_KEY}, SEARCH_CX: ${!!SEARCH_CX}`;
   }
 
   result.source = 'none';
