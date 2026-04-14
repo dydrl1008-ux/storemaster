@@ -212,7 +212,7 @@ async function searchPhone(name) {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'ngrok-skip-browser-warning': 'true' },
         body: JSON.stringify({ name }),
-        signal: AbortSignal.timeout(30000)
+        signal: AbortSignal.timeout(60000)
       });
       const d = await r.json();
       if (r.ok && d.phones) {
@@ -291,6 +291,7 @@ function renderItem(name) {
             <span class="source-label ${srcKey}">${srcLabel}</span>
             <button class="copy-btn" onclick="copyNum('${num}', this)">복사</button>
           </div>
+          ${p.seller_name || p.rep_name ? `<div class="phone-meta">상호: ${p.seller_name || '-'} · 대표: ${p.rep_name || '-'}</div>` : ''}
           ${meta}
         </div>`;
     }).join('');
